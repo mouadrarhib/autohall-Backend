@@ -12,6 +12,7 @@ import userSiteRoutes from './usersite.routes.js';
 import appParameterRoutes from './appparameter.routes.js';
 import auditLogRoutes from './auditlog.routes.js';
 import typePeriode from './typeperiode.routes.js';
+import periodeRoute from './periode.routes.js';
 
 
 
@@ -31,6 +32,7 @@ router.use('/user-sites', userSiteRoutes);
 router.use('/app-parameters', appParameterRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/type-periode', typePeriode);
+router.use('/periode', periodeRoute);
 
 
 
