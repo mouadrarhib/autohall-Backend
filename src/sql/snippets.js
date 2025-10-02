@@ -288,58 +288,68 @@ APPPARAMETER: {
     `,
   },
 
-  PERIODE: {
-    PERIODE_CREATE: `
-      EXEC dbo.sp_Periode_Create
-        @year = :year,
-        @month = :month,
-        @week = :week,
-        @startedDate = :startedDate,
-        @endDate = :endDate,
-        @typePeriodeId = :typePeriodeId
-    `,
-    PERIODE_UPDATE: `
-      EXEC dbo.sp_Periode_Update
-        @id = :id,
-        @year = :year,
-        @month = :month,
-        @week = :week,
-        @startedDate = :startedDate,
-        @endDate = :endDate,
-        @typePeriodeId = :typePeriodeId
-    `,
-    PERIODE_GET_BY_ID_ACTIVE: `
-      EXEC dbo.sp_Periode_GetByIdActive
-        @id = :id
-    `,
-    PERIODE_LIST_ACTIVE: `
-      EXEC dbo.sp_Periode_ListActive
-    `,
-    PERIODE_ACTIVATE: `
-      EXEC dbo.sp_Periode_Activate
-        @id = :id
-    `,
-    PERIODE_DEACTIVATE: `
-      EXEC dbo.sp_Periode_Deactivate
-        @id = :id
-    `,
-    PERIODE_LIST_BY_TYPE: `
-      EXEC dbo.sp_Periode_ListByType
-        @typePeriodeId   = :typePeriodeId,
-        @typePeriodeName = :typePeriodeName,
-        @hebdomadaire    = :hebdomadaire,
-        @mensuel         = :mensuel,
-        @year            = :year,
-        @month           = :month
-    `,
-    PERIODE_LIST_YEARS: `
-      EXEC dbo.sp_Periode_ListYears
-    `,
-    PERIODE_LIST_BY_YEAR: `
-      EXEC dbo.sp_Periode_ListByYear
-        @year = :year
-    `,
-  },
+PERIODE: {
+  PERIODE_CREATE: `
+    EXEC dbo.sp_Periode_Create 
+    @year = :year, 
+    @month = :month, 
+    @week = :week, 
+    @startedDate = :startedDate, 
+    @endDate = :endDate, 
+    @typePeriodeId = :typePeriodeId
+  `,
+  PERIODE_UPDATE: `
+    EXEC dbo.sp_Periode_Update 
+    @id = :id, 
+    @year = :year, 
+    @month = :month, 
+    @week = :week, 
+    @startedDate = :startedDate, 
+    @endDate = :endDate, 
+    @typePeriodeId = :typePeriodeId
+  `,
+  PERIODE_GET_BY_ID_ACTIVE: `
+    EXEC dbo.sp_Periode_GetByIdActive @id = :id
+  `,
+  // Updated with pagination
+  PERIODE_LIST_ACTIVE: `
+    EXEC dbo.sp_Periode_ListActive 
+    @pageNumber = :pageNumber, 
+    @pageSize = :pageSize
+  `,
+  PERIODE_ACTIVATE: `
+    EXEC dbo.sp_Periode_Activate @id = :id
+  `,
+  PERIODE_DEACTIVATE: `
+    EXEC dbo.sp_Periode_Deactivate @id = :id
+  `,
+  // Updated with pagination
+  PERIODE_LIST_BY_TYPE: `
+    EXEC dbo.sp_Periode_ListByType 
+    @typePeriodeId = :typePeriodeId, 
+    @typePeriodeName = :typePeriodeName, 
+    @hebdomadaire = :hebdomadaire, 
+    @mensuel = :mensuel, 
+    @year = :year, 
+    @month = :month,
+    @pageNumber = :pageNumber,
+    @pageSize = :pageSize
+  `,
+  // Updated with pagination
+  PERIODE_LIST_YEARS: `
+    EXEC dbo.sp_Periode_ListYears 
+    @pageNumber = :pageNumber, 
+    @pageSize = :pageSize
+  `,
+  // Updated with pagination
+  PERIODE_LIST_BY_YEAR: `
+    EXEC dbo.sp_Periode_ListByYear 
+    @year = :year,
+    @pageNumber = :pageNumber,
+    @pageSize = :pageSize
+  `,
+},
+
   
   TYPE_VENTE: {
     TYPE_VENTE_CREATE: `
