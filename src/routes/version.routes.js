@@ -1,89 +1,76 @@
-// src/routes/version.routes.js
-
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
 
-// Import validation middleware
 import {
   validateVersionCreate,
   validateVersionUpdate,
-  validateVersionSearch,
-  validateVersionId,
-  validateModeleId,
-  validateVersionQuery
+  validateVersionId
 } from '../middlewares/version/validateInput.js';
 
-// Import permission middleware
 import {
   canCreateVersion,
   canReadVersion,
   canUpdateVersion
 } from '../middlewares/version/hasPermission.js';
 
-// Import controller
-import * as versionController from '../controllers/version.controller.js';
+import * as controller from '../controllers/version.controller.js';
 
 const router = express.Router();
 
-// All routes require authentication
 router.use(isAuth);
 
-// Create version
-router.post('/', 
+router.post(
+  '/',
   canCreateVersion,
   validateVersionCreate,
-  versionController.createVersion
+  controller.createVersion
 );
 
-// Get version by ID  
-router.get('/:id', 
+router.get(
+  '/:id',
   validateVersionId,
   canReadVersion,
-  versionController.getVersionById
+  controller.getVersionById
 );
 
-// List all versions
-router.get('/', 
+router.get(
+  '/',
   canReadVersion,
-  validateVersionQuery,
-  versionController.listVersions
+  controller.listVersions
 );
 
-// Search versions
-router.get('/search', 
+router.get(
+  '/by-modele',
   canReadVersion,
-  validateVersionSearch,
-  validateVersionQuery,
-  versionController.searchVersions
+  controller.listVersionsByModele
 );
 
-// List versions by modele
-router.get('/by-modele/:idModele', 
-  validateModeleId,
+router.get(
+  '/search',
   canReadVersion,
-  validateVersionQuery,
-  versionController.listVersionsByModele
+  controller.searchVersions
 );
 
-// Update version
-router.patch('/:id', 
+router.patch(
+  '/:id',
   validateVersionId,
   canUpdateVersion,
   validateVersionUpdate,
-  versionController.updateVersion
+  controller.updateVersion
 );
 
-// Activate version
-router.post('/:id/activate', 
+router.post(
+  '/:id/activate',
   validateVersionId,
   canUpdateVersion,
-  versionController.activateVersion
+  controller.activateVersion
 );
 
-// Deactivate version
-router.post('/:id/deactivate', 
+router.post(
+  '/:id/deactivate',
   validateVersionId,
   canUpdateVersion,
-  versionController.deactivateVersion
+  controller.deactivateVersion
 );
+
 export default router;
