@@ -90,11 +90,15 @@ export const SQL = {
   FILIALE: {
     FILIALE_CREATE: 'EXEC dbo.sp_InsertFiliale @name=:name, @active=:active',
     FILIALE_GET_BY_ID: 'EXEC dbo.sp_GetFilialeById @id=:id',
-    FILIALE_GET_ALL: 'EXEC dbo.sp_GetAllFiliales',
+    
+    // Updated with pagination
+    FILIALE_GET_ALL: 'EXEC dbo.sp_GetAllFiliales @pageNumber=:pageNumber, @pageSize=:pageSize',
+    
     FILIALE_DEACTIVATE: 'EXEC dbo.sp_DeactivateFiliale @id=:id',
     FILIALE_ACTIVATE: 'EXEC dbo.sp_ActivateFiliale @id=:id',
     FILIALE_UPDATE: 'EXEC dbo.sp_UpdateFiliale @id=:id, @name=:name, @active=:active',
   },
+
 
   MODELE: {
     MODELE_CREATE: `

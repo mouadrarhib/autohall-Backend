@@ -42,7 +42,6 @@ import * as filialeService from '../services/filiale.service.js';
  */
 export const createFiliale = asyncHandler(async (req, res) => {
   const { name, active = true } = req.body || {};
-
   try {
     const result = await filialeService.createFiliale(name, active);
     res.status(201).json({ data: result });
@@ -73,11 +72,9 @@ export const createFiliale = asyncHandler(async (req, res) => {
 export const getFilialeById = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const filiale = await filialeService.getFilialeById(id);
-  
   if (!filiale) {
     return res.status(404).json({ error: 'Filiale not found' });
   }
-  
   res.json({ data: filiale });
 });
 
@@ -85,15 +82,51 @@ export const getFilialeById = asyncHandler(async (req, res) => {
  * @openapi
  * /api/filiales:
  *   get:
- *     summary: List all filiales
+ *     summary: List all filiales with pagination
  *     tags: [Filiales]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of records per page
  *     responses:
  *       200:
- *         description: List of filiales
+ *         description: Paginated list of filiales
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     pageSize:
+ *                       type: integer
+ *                     totalRecords:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
  */
 export const listFiliales = asyncHandler(async (req, res) => {
-  const filiales = await filialeService.listFiliales();
-  res.json({ data: filiales });
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await filialeService.listFiliales(page, pageSize);
+  res.json(result);
 });
 
 /**
@@ -130,14 +163,11 @@ export const listFiliales = asyncHandler(async (req, res) => {
 export const updateFiliale = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const { name = null, active = null } = req.body || {};
-
   try {
     const result = await filialeService.updateFiliale(id, name, active);
-    
     if (!result) {
       return res.status(404).json({ error: 'Filiale not found' });
     }
-    
     res.json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);
@@ -165,14 +195,11 @@ export const updateFiliale = asyncHandler(async (req, res) => {
  */
 export const activateFiliale = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-
   try {
     const result = await filialeService.activateFiliale(id);
-    
     if (!result) {
       return res.status(404).json({ error: 'Filiale not found' });
     }
-    
     res.json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);
@@ -200,14 +227,11 @@ export const activateFiliale = asyncHandler(async (req, res) => {
  */
 export const deactivateFiliale = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-
   try {
     const result = await filialeService.deactivateFiliale(id);
-    
     if (!result) {
       return res.status(404).json({ error: 'Filiale not found' });
     }
-    
     res.json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);
