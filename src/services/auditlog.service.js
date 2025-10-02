@@ -4,7 +4,12 @@ import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { QueryTypes } from 'sequelize';
 import { parseInteger } from '../helpers/queryHelpers.js';
-import { getFirstResult, hasResults, prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { 
+  getFirstResult, 
+  hasResults, 
+  prepareStoredProcParams 
+} from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 /**
  * Count audit logs by day
@@ -70,35 +75,69 @@ export async function getLatestPerModule() {
 }
 
 /**
- * List distinct actions
+ * List distinct actions with pagination
  */
-export async function listActions(module = null) {
-  const rows = await sequelize.query(SQL.AUDITLOG.AUDITLOG_LIST_ACTIONS, {
-    replacements: { module },
-    type: QueryTypes.SELECT
+export async function listActions(module = null, page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    module,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  return rows ? rows.map(r => r.action) : [];
+  
+  try {
+    const rows = await sequelize.query(SQL.AUDITLOG.AUDITLOG_LIST_ACTIONS, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listActions service:', error);
+    throw error;
+  }
 }
 
 /**
- * List distinct modules
+ * List distinct modules with pagination
  */
-export async function listModules() {
-  const rows = await sequelize.query(SQL.AUDITLOG.AUDITLOG_LIST_MODULES, {
-    type: QueryTypes.SELECT
+export async function listModules(page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  return rows ? rows.map(r => r.module) : [];
+  
+  try {
+    const rows = await sequelize.query(SQL.AUDITLOG.AUDITLOG_LIST_MODULES, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listModules service:', error);
+    throw error;
+  }
 }
 
 /**
- * List distinct users
+ * List distinct users with pagination
  */
-export async function listUsers(module = null, action = null) {
-  const rows = await sequelize.query(SQL.AUDITLOG.AUDITLOG_LIST_USERS, {
-    replacements: { module, action },
-    type: QueryTypes.SELECT
+export async function listUsers(module = null, action = null, page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    module,
+    action,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  return rows ? rows.map(r => r.userId) : [];
+  
+  try {
+    const rows = await sequelize.query(SQL.AUDITLOG.AUDITLOG_LIST_USERS, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listUsers service:', error);
+    throw error;
+  }
 }
 
 /**
@@ -163,7 +202,6 @@ export async function writeAuditLog(logData) {
     ip = '0.0.0.0',
     description = null
   } = logData;
-
   const rows = await sequelize.query(SQL.AUDITLOG.AUDITLOG_WRITE, {
     replacements: { module, action, objectId, scope, userId, message, ip, description },
     type: QueryTypes.SELECT
@@ -184,26 +222,21 @@ export async function writeAuditLogFromSession(logData, userId) {
     ip = '0.0.0.0',
     description = null
   } = logData;
-
   const data = await sequelize.transaction(async (t) => {
     await sequelize.query(
       "EXEC sys.sp_set_session_context @key=N'UserId', @value=:val;",
       { replacements: { val: String(userId) }, transaction: t }
     );
-
     const rows = await sequelize.query(SQL.AUDITLOG.AUDITLOG_WRITE_FROM_SESSION, {
       replacements: { module, action, objectId, scope, message, ip, description },
       type: QueryTypes.SELECT,
       transaction: t
     });
-
     await sequelize.query(
       "EXEC sys.sp_set_session_context @key=N'UserId', @value=NULL;",
       { transaction: t }
     );
-
     return getFirstResult(rows);
   });
-
   return data;
 }
