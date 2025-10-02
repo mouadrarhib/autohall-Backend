@@ -119,32 +119,42 @@ export const SQL = {
   VERSION: {
     VERSION_CREATE: `
       EXEC dbo.sp_Version_Create
-        @name = :name,
-        @idModele = :idModele,
-        @volume = :volume,
-        @price = :price,
-        @tm = :tm,
-        @margin = :margin,
-        @newId = NULL OUTPUT
+      @name = :name,
+      @idModele = :idModele,
+      @volume = :volume,
+      @price = :price,
+      @tm = :tm,
+      @margin = :margin,
+      @newId = NULL OUTPUT
     `,
     VERSION_UPDATE: `
       EXEC dbo.sp_Version_Update
-        @id = :id,
-        @name = :name,
-        @idModele = :idModele,
-        @volume = :volume,
-        @price = :price,
-        @tm = :tm,
-        @margin = :margin
+      @id = :id,
+      @name = :name,
+      @idModele = :idModele,
+      @volume = :volume,
+      @price = :price,
+      @tm = :tm,
+      @margin = :margin
     `,
     VERSION_GET_BY_ID: `
       EXEC dbo.sp_Version_GetById @id = :id
     `,
+    // Updated with pagination
     VERSION_LIST: `
-      EXEC dbo.sp_Version_List @idModele = :idModele, @onlyActive = :onlyActive
+      EXEC dbo.sp_Version_List 
+      @IdModele = :idModele, 
+      @OnlyActive = :onlyActive,
+      @pageNumber = :pageNumber,
+      @pageSize = :pageSize
     `,
+    // Updated with pagination
     VERSION_LIST_BY_MODELE: `
-      EXEC dbo.sp_Version_ListByModele @idModele = :idModele, @onlyActive = :onlyActive
+      EXEC dbo.sp_Version_ListByModele 
+      @IdModele = :idModele, 
+      @OnlyActive = :onlyActive,
+      @pageNumber = :pageNumber,
+      @pageSize = :pageSize
     `,
     VERSION_SEARCH: `
       EXEC dbo.sp_Version_Search @q = :q, @idModele = :idModele, @onlyActive = :onlyActive
@@ -156,7 +166,6 @@ export const SQL = {
       EXEC dbo.sp_Version_Deactivate @id = :id
     `
   },
-
 
   SUCCURSALE: {
     SUCCURSALE_CREATE: `

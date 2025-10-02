@@ -168,7 +168,7 @@ export const getVersionById = asyncHandler(async (req, res) => {
  * @openapi
  * /api/versions:
  *   get:
- *     summary: List Versions with optional filters
+ *     summary: List Versions with optional filters and pagination
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
@@ -181,9 +181,37 @@ export const getVersionById = asyncHandler(async (req, res) => {
  *         name: onlyActive
  *         schema: { type: boolean, default: true }
  *         description: Show only active versions
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema: { type: integer, default: 10 }
+ *         description: Number of records per page
  *     responses:
  *       200:
- *         description: List
+ *         description: Paginated list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     pageSize:
+ *                       type: integer
+ *                     totalRecords:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
  *       401:
  *         description: Unauthorized
  *       403:
@@ -191,15 +219,27 @@ export const getVersionById = asyncHandler(async (req, res) => {
  */
 export const listVersions = asyncHandler(async (req, res) => {
   const { idModele, onlyActive } = req.query;
-  const rows = await versionService.listVersions(idModele, onlyActive !== 'false');
-  res.json({ data: rows });
+  
+  // Parse pagination parameters
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  // Call service with pagination
+  const result = await versionService.listVersions(
+    idModele, 
+    onlyActive !== 'false', 
+    page, 
+    pageSize
+  );
+  
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/versions/by-modele:
  *   get:
- *     summary: List Versions by Modele
+ *     summary: List Versions by Modele with pagination
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
@@ -211,9 +251,17 @@ export const listVersions = asyncHandler(async (req, res) => {
  *       - in: query
  *         name: onlyActive
  *         schema: { type: boolean, default: true }
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema: { type: integer, default: 10 }
+ *         description: Number of records per page
  *     responses:
  *       200:
- *         description: List
+ *         description: Paginated list
  *       401:
  *         description: Unauthorized
  *       403:
@@ -221,8 +269,20 @@ export const listVersions = asyncHandler(async (req, res) => {
  */
 export const listVersionsByModele = asyncHandler(async (req, res) => {
   const { idModele, onlyActive } = req.query;
-  const rows = await versionService.listVersionsByModele(idModele, onlyActive !== 'false');
-  res.json({ data: rows });
+  
+  // Parse pagination parameters
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  // Call service with pagination
+  const result = await versionService.listVersionsByModele(
+    idModele, 
+    onlyActive !== 'false', 
+    page, 
+    pageSize
+  );
+  
+  res.json(result);
 });
 
 /**
