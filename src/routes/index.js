@@ -13,6 +13,10 @@ import appParameterRoutes from './appparameter.routes.js';
 import auditLogRoutes from './auditlog.routes.js';
 import typePeriode from './typeperiode.routes.js';
 import periodeRoute from './periode.routes.js';
+import typeVenteRoutes from './typevente.routes.js';
+import typeObjectifRoutes from './typeobjectif.routes.js';
+import objectifRoutes from './objectif.routes.js';
+
 
 
 
@@ -33,8 +37,9 @@ router.use('/app-parameters', appParameterRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/type-periode', typePeriode);
 router.use('/periode', periodeRoute);
-
-
+router.use('/type-ventes', typeVenteRoutes);
+router.use('/type-objectifs', typeObjectifRoutes);
+router.use('/objectifs', objectifRoutes);
 
 
 
