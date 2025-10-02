@@ -214,18 +214,24 @@ export const SQL = {
     USERSITE_BY_SITE: 'EXEC dbo.sp_GetUserSitesBySite @idSite=:idSite',
   },
 
-  APPPARAMETER: {
-    APPPARAMETER_CREATE: 'EXEC dbo.sp_AppParameter_Create @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
-    APPPARAMETER_GET_BY_ID: 'EXEC dbo.sp_AppParameter_GetById @Id=:id',
-    APPPARAMETER_GET_BY_KEY: 'EXEC dbo.sp_AppParameter_Get @Key=:key',
-    APPPARAMETER_LIST: 'EXEC dbo.sp_AppParameter_List @Type=:type, @Scope=:scope, @OnlyActive=:onlyActive',
-    APPPARAMETER_SEARCH: 'EXEC dbo.sp_AppParameter_Search @q=:q, @Type=:type, @Scope=:scope, @OnlyActive=:onlyActive',
-    APPPARAMETER_SET: 'EXEC dbo.sp_AppParameter_Set @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
-    APPPARAMETER_UPDATE: 'EXEC dbo.sp_AppParameter_Update @Id=:id, @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
-    APPPARAMETER_ACTIVATE: 'EXEC dbo.sp_AppParameter_Activate @Id=:id',
-    APPPARAMETER_DEACTIVATE: 'EXEC dbo.sp_AppParameter_Deactivate @Id=:id',
-    APPPARAMETER_DELETE: 'EXEC dbo.sp_AppParameter_Delete @Id=:id',
-  },
+APPPARAMETER: {
+  APPPARAMETER_CREATE: 'EXEC dbo.sp_AppParameter_Create @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
+  APPPARAMETER_GET_BY_ID: 'EXEC dbo.sp_AppParameter_GetById @Id=:id',
+  APPPARAMETER_GET_BY_KEY: 'EXEC dbo.sp_AppParameter_Get @Key=:key',
+  
+  // Updated with pagination
+  APPPARAMETER_LIST: 'EXEC dbo.sp_AppParameter_List @Type=:type, @Scope=:scope, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  
+  // Updated with pagination
+  APPPARAMETER_SEARCH: 'EXEC dbo.sp_AppParameter_Search @q=:q, @Type=:type, @Scope=:scope, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  
+  APPPARAMETER_SET: 'EXEC dbo.sp_AppParameter_Set @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
+  APPPARAMETER_UPDATE: 'EXEC dbo.sp_AppParameter_Update @Id=:id, @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
+  APPPARAMETER_ACTIVATE: 'EXEC dbo.sp_AppParameter_Activate @Id=:id',
+  APPPARAMETER_DEACTIVATE: 'EXEC dbo.sp_AppParameter_Deactivate @Id=:id',
+  APPPARAMETER_DELETE: 'EXEC dbo.sp_AppParameter_Delete @Id=:id',
+},
+
 
   AUDITLOG: {
     AUDITLOG_COUNT_BY_DAY: 'EXEC dbo.usp_AuditLog_CountByDay @fromUtc=:fromUtc, @toUtc=:toUtc, @module=:module, @action=:action',

@@ -4,7 +4,12 @@ import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { QueryTypes } from 'sequelize';
 import { sanitizeSearchQuery, parseBoolean } from '../helpers/queryHelpers.js';
-import { getFirstResult, hasResults, prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { 
+  getFirstResult, 
+  hasResults, 
+  prepareStoredProcParams 
+} from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 /**
  * Create a new app parameter
@@ -19,7 +24,7 @@ export async function createAppParameter(key, value = null, description = null, 
     active: active ? 1 : 0
   });
   try {
-    const result = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_CREATE, { // changed
+    const result = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_CREATE, {
       replacements: params,
       type: QueryTypes.SELECT
     });
@@ -48,7 +53,7 @@ export async function createAppParameter(key, value = null, description = null, 
  * Get app parameter by ID
  */
 export async function getAppParameterById(id) {
-  const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_GET_BY_ID, { // changed
+  const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_GET_BY_ID, {
     replacements: { id: Number(id) },
     type: QueryTypes.SELECT
   });
@@ -59,7 +64,7 @@ export async function getAppParameterById(id) {
  * Get app parameter by key
  */
 export async function getAppParameterByKey(key) {
-  const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_GET_BY_KEY, { // changed
+  const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_GET_BY_KEY, {
     replacements: { key: key.trim() },
     type: QueryTypes.SELECT
   });
@@ -67,40 +72,65 @@ export async function getAppParameterByKey(key) {
 }
 
 /**
- * List app parameters
+ * List app parameters with pagination
  */
-export async function listAppParameters(type = null, scope = null, onlyActive = true) {
+export async function listAppParameters(type = null, scope = null, onlyActive = true, page = 1, pageSize = 10) {
   const params = prepareStoredProcParams({
     type: type ? type.trim() : null,
     scope: scope ? scope.trim() : null,
-    onlyActive: onlyActive ? 1 : 0
+    onlyActive: onlyActive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_LIST, { // changed
-    replacements: params,
-    type: QueryTypes.SELECT
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_LIST, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listAppParameters service:', error);
+    throw error;
+  }
 }
 
 /**
- * Search app parameters
+ * Search app parameters with pagination
  */
-export async function searchAppParameters(searchTerm, type = null, scope = null, onlyActive = true) {
+export async function searchAppParameters(searchTerm, type = null, scope = null, onlyActive = true, page = 1, pageSize = 10) {
   const sanitizedSearch = sanitizeSearchQuery(searchTerm);
   if (!sanitizedSearch) {
-    return [];
+    return {
+      data: [],
+      pagination: {
+        page: Number(page),
+        pageSize: Number(pageSize),
+        totalRecords: 0,
+        totalPages: 0
+      }
+    };
   }
+  
   const params = prepareStoredProcParams({
     q: sanitizedSearch,
     type: type ? type.trim() : null,
     scope: scope ? scope.trim() : null,
-    onlyActive: onlyActive ? 1 : 0
+    onlyActive: onlyActive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_SEARCH, { // changed
-    replacements: params,
-    type: QueryTypes.SELECT
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_SEARCH, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in searchAppParameters service:', error);
+    throw error;
+  }
 }
 
 /**
@@ -116,7 +146,7 @@ export async function setAppParameter(key, value, description = null, type = nul
     active: active ? 1 : 0
   });
   try {
-    const result = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_SET, { // changed
+    const result = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_SET, {
       replacements: params,
       type: QueryTypes.SELECT
     });
@@ -156,7 +186,7 @@ export async function updateAppParameterById(id, updates = {}) {
     active: active === null ? null : (active ? 1 : 0)
   });
   try {
-    await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_UPDATE, { // changed
+    await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_UPDATE, {
       replacements: params,
       type: QueryTypes.RAW
     });
@@ -182,7 +212,7 @@ export async function updateAppParameterByKey(key, updates = {}) {
     active: active === null ? null : (active ? 1 : 0)
   });
   try {
-    await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_UPDATE, { // changed
+    await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_UPDATE, {
       replacements: params,
       type: QueryTypes.RAW
     });
@@ -198,7 +228,7 @@ export async function updateAppParameterByKey(key, updates = {}) {
  */
 export async function activateAppParameter(id) {
   try {
-    const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_ACTIVATE, { // changed
+    const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_ACTIVATE, {
       replacements: { id: Number(id) },
       type: QueryTypes.SELECT
     });
@@ -214,7 +244,7 @@ export async function activateAppParameter(id) {
  */
 export async function deactivateAppParameter(id) {
   try {
-    const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_DEACTIVATE, { // changed
+    const rows = await sequelize.query(SQL.APPPARAMETER.APPPARAMETER_DEACTIVATE, {
       replacements: { id: Number(id) },
       type: QueryTypes.SELECT
     });

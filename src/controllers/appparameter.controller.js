@@ -128,7 +128,7 @@ export const getAppParameterByKey = asyncHandler(async (req, res) => {
  * @openapi
  * /api/app-parameters:
  *   get:
- *     summary: List app parameters
+ *     summary: List app parameters with pagination
  *     tags: [AppParameters]
  *     parameters:
  *       - in: query
@@ -146,23 +146,35 @@ export const getAppParameterByKey = asyncHandler(async (req, res) => {
  *         schema:
  *           type: boolean
  *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: List of app parameters
+ *         description: Paginated list of app parameters
  */
 export const listAppParameters = asyncHandler(async (req, res) => {
   const { type, scope } = req.query;
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
   
-  const appparameters = await appparameterService.listAppParameters(type, scope, onlyActive);
-  res.json({ data: appparameters });
+  const result = await appparameterService.listAppParameters(type, scope, onlyActive, page, pageSize);
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/app-parameters/search:
  *   get:
- *     summary: Search app parameters
+ *     summary: Search app parameters with pagination
  *     tags: [AppParameters]
  *     parameters:
  *       - in: query
@@ -186,16 +198,28 @@ export const listAppParameters = asyncHandler(async (req, res) => {
  *         schema:
  *           type: boolean
  *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: Search results
+ *         description: Paginated search results
  */
 export const searchAppParameters = asyncHandler(async (req, res) => {
   const { q, type, scope } = req.query;
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
   
-  const results = await appparameterService.searchAppParameters(q, type, scope, onlyActive);
-  res.json({ data: results });
+  const result = await appparameterService.searchAppParameters(q, type, scope, onlyActive, page, pageSize);
+  res.json(result);
 });
 
 /**
