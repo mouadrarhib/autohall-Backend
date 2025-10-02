@@ -3,18 +3,25 @@
 import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { QueryTypes } from 'sequelize';
-import { getFirstResult, prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { 
+  getFirstResult, 
+  prepareStoredProcParams 
+} from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
-export async function createPeriode({ year, month, week, startedDate, endDate, typePeriodeId = null }) {
+/**
+ * Create a new periode
+ */
+export async function createPeriode(data) {
   const params = prepareStoredProcParams({
-    year: Number(year),
-    month: Number(month),
-    week: Number(week),
-    startedDate: String(startedDate),
-    endDate: String(endDate),
-    typePeriodeId: typePeriodeId == null ? null : Number(typePeriodeId)
+    year: Number(data.year),
+    month: Number(data.month),
+    week: data.week ? Number(data.week) : null,
+    startedDate: data.startedDate,
+    endDate: data.endDate,
+    typePeriodeId: Number(data.typePeriodeId)
   });
-
+  
   const rows = await sequelize.query(SQL.PERIODE.PERIODE_CREATE, {
     replacements: params,
     type: QueryTypes.SELECT
@@ -22,17 +29,20 @@ export async function createPeriode({ year, month, week, startedDate, endDate, t
   return getFirstResult(rows);
 }
 
-export async function updatePeriode(id, { year, month, week, startedDate, endDate, typePeriodeId = null }) {
+/**
+ * Update a periode
+ */
+export async function updatePeriode(id, data) {
   const params = prepareStoredProcParams({
     id: Number(id),
-    year: Number(year),
-    month: Number(month),
-    week: Number(week),
-    startedDate: String(startedDate),
-    endDate: String(endDate),
-    typePeriodeId: typePeriodeId == null ? null : Number(typePeriodeId)
+    year: Number(data.year),
+    month: Number(data.month),
+    week: data.week ? Number(data.week) : null,
+    startedDate: data.startedDate,
+    endDate: data.endDate,
+    typePeriodeId: Number(data.typePeriodeId)
   });
-
+  
   const rows = await sequelize.query(SQL.PERIODE.PERIODE_UPDATE, {
     replacements: params,
     type: QueryTypes.SELECT
@@ -40,7 +50,10 @@ export async function updatePeriode(id, { year, month, week, startedDate, endDat
   return getFirstResult(rows);
 }
 
-export async function getActivePeriodeById(id) {
+/**
+ * Get periode by ID (active only)
+ */
+export async function getPeriodeById(id) {
   const rows = await sequelize.query(SQL.PERIODE.PERIODE_GET_BY_ID_ACTIVE, {
     replacements: { id: Number(id) },
     type: QueryTypes.SELECT
@@ -48,13 +61,30 @@ export async function getActivePeriodeById(id) {
   return getFirstResult(rows);
 }
 
-export async function listActivePeriodes() {
-  const rows = await sequelize.query(SQL.PERIODE.PERIODE_LIST_ACTIVE, {
-    type: QueryTypes.SELECT
+/**
+ * List all active periodes with pagination
+ */
+export async function listActivePeriodes(page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.PERIODE.PERIODE_LIST_ACTIVE, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listActivePeriodes service:', error);
+    throw error;
+  }
 }
 
+/**
+ * Activate a periode
+ */
 export async function activatePeriode(id) {
   const rows = await sequelize.query(SQL.PERIODE.PERIODE_ACTIVATE, {
     replacements: { id: Number(id) },
@@ -63,6 +93,9 @@ export async function activatePeriode(id) {
   return getFirstResult(rows);
 }
 
+/**
+ * Deactivate a periode
+ */
 export async function deactivatePeriode(id) {
   const rows = await sequelize.query(SQL.PERIODE.PERIODE_DEACTIVATE, {
     replacements: { id: Number(id) },
@@ -71,47 +104,72 @@ export async function deactivatePeriode(id) {
   return getFirstResult(rows);
 }
 
-const toBit = (v) => {
-  if (v === undefined || v === null || v === '') return null;
-  const s = String(v).toLowerCase();
-  if (v === true || s === 'true' || s === '1') return 1;
-  if (v === false || s === 'false' || s === '0') return 0;
-  return null;
-};
-
-export async function listPeriodesByType({
-  typePeriodeId = null,
-  typePeriodeName = null,
-  hebdomadaire = null,
-  mensuel = null,
-  year = null,
-  month = null
-} = {}) {
+/**
+ * List periodes by type with pagination
+ */
+export async function listPeriodesByType(filters, page = 1, pageSize = 10) {
   const params = prepareStoredProcParams({
-    typePeriodeId: typePeriodeId == null ? null : Number(typePeriodeId),
-    typePeriodeName: typePeriodeName ? String(typePeriodeName).trim() : null,
-    hebdomadaire: toBit(hebdomadaire),
-    mensuel: toBit(mensuel),
-    year: year == null ? null : Number(year),
-    month: month == null ? null : Number(month),
+    typePeriodeId: filters.typePeriodeId ? Number(filters.typePeriodeId) : null,
+    typePeriodeName: filters.typePeriodeName || null,
+    hebdomadaire: filters.hebdomadaire !== undefined ? (filters.hebdomadaire ? 1 : 0) : null,
+    mensuel: filters.mensuel !== undefined ? (filters.mensuel ? 1 : 0) : null,
+    year: filters.year ? Number(filters.year) : null,
+    month: filters.month ? Number(filters.month) : null,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
+  
+  try {
+    const rows = await sequelize.query(SQL.PERIODE.PERIODE_LIST_BY_TYPE, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listPeriodesByType service:', error);
+    throw error;
+  }
+}
 
-  const rows = await sequelize.query(SQL.PERIODE.PERIODE_LIST_BY_TYPE, {
-    replacements: params,
-    type: QueryTypes.SELECT,
+/**
+ * List distinct years with pagination
+ */
+export async function listYears(page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.PERIODE.PERIODE_LIST_YEARS, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listYears service:', error);
+    throw error;
+  }
 }
-export async function listPeriodeYears() {
-  const rows = await sequelize.query(SQL.PERIODE.PERIODE_LIST_YEARS, {
-    type: QueryTypes.SELECT,
+
+/**
+ * List periodes by year with pagination
+ */
+export async function listPeriodesByYear(year, page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    year: Number(year),
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  return rows || [];
-}
-export async function listPeriodesByYear(year) {
-  const rows = await sequelize.query(SQL.PERIODE.PERIODE_LIST_BY_YEAR, {
-    replacements: { year: Number(year) },
-    type: QueryTypes.SELECT,
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.PERIODE.PERIODE_LIST_BY_YEAR, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listPeriodesByYear service:', error);
+    throw error;
+  }
 }

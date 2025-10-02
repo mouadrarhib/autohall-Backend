@@ -8,14 +8,14 @@ import * as periodeService from '../services/periode.service.js';
  * @openapi
  * tags:
  *   - name: Periodes
- *     description: Periode management operations
+ *     description: Period management operations
  */
 
 /**
  * @openapi
  * /api/periodes:
  *   post:
- *     summary: Create a new Periode
+ *     summary: Create a new periode
  *     tags: [Periodes]
  *     security:
  *       - bearerAuth: []
@@ -25,7 +25,7 @@ import * as periodeService from '../services/periode.service.js';
  *         application/json:
  *           schema:
  *             type: object
- *             required: [year, month, week, startedDate, endDate]
+ *             required: [year, month, startedDate, endDate, typePeriodeId]
  *             properties:
  *               year:
  *                 type: integer
@@ -34,45 +34,31 @@ import * as periodeService from '../services/periode.service.js';
  *                 type: integer
  *                 minimum: 1
  *                 maximum: 12
- *                 example: 9
+ *                 example: 10
  *               week:
  *                 type: integer
- *                 minimum: 0
- *                 example: 0
- *                 description: 0 = mensuel, >0 = hebdomadaire
+ *                 nullable: true
+ *                 example: 1
  *               startedDate:
  *                 type: string
  *                 format: date
- *                 example: "2025-09-01"
+ *                 example: "2025-10-01"
  *               endDate:
  *                 type: string
  *                 format: date
- *                 example: "2025-09-30"
+ *                 example: "2025-10-07"
  *               typePeriodeId:
  *                 type: integer
- *                 nullable: true
- *                 example: 2
+ *                 example: 1
  *     responses:
  *       201:
- *         description: Created
+ *         description: Periode created
  *       400:
  *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
  */
 export const createPeriode = asyncHandler(async (req, res) => {
-  const { year, month, week, startedDate, endDate, typePeriodeId = null } = req.body || {};
   try {
-    const result = await periodeService.createPeriode({
-      year: Number(year),
-      month: Number(month),
-      week: Number(week),
-      startedDate,
-      endDate,
-      typePeriodeId: typePeriodeId != null ? Number(typePeriodeId) : null
-    });
+    const result = await periodeService.createPeriode(req.body);
     res.status(201).json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);
@@ -83,61 +69,8 @@ export const createPeriode = asyncHandler(async (req, res) => {
 /**
  * @openapi
  * /api/periodes/{id}:
- *   get:
- *     summary: Get active Periode by ID
- *     tags: [Periodes]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Found
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Not found
- */
-export const getPeriodeById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const row = await periodeService.getActivePeriodeById(id);
-  if (!row) return res.status(404).json({ error: 'Periode not found' });
-  res.json({ data: row });
-});
-
-/**
- * @openapi
- * /api/periodes:
- *   get:
- *     summary: List active Periodes
- *     tags: [Periodes]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of active periodes
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- */
-export const listActivePeriodes = asyncHandler(async (_req, res) => {
-  const rows = await periodeService.listActivePeriodes();
-  res.json({ data: rows });
-});
-
-/**
- * @openapi
- * /api/periodes/{id}:
  *   patch:
- *     summary: Update Periode
+ *     summary: Update a periode
  *     tags: [Periodes]
  *     security:
  *       - bearerAuth: []
@@ -145,24 +78,23 @@ export const listActivePeriodes = asyncHandler(async (_req, res) => {
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [year, month, week, startedDate, endDate]
+ *             required: [year, month, startedDate, endDate, typePeriodeId]
  *             properties:
- *               year: { type: integer }
+ *               year:
+ *                 type: integer
  *               month:
  *                 type: integer
- *                 minimum: 1
- *                 maximum: 12
  *               week:
  *                 type: integer
- *                 minimum: 0
- *                 description: 0 = mensuel, >0 = hebdomadaire
+ *                 nullable: true
  *               startedDate:
  *                 type: string
  *                 format: date
@@ -171,31 +103,16 @@ export const listActivePeriodes = asyncHandler(async (_req, res) => {
  *                 format: date
  *               typePeriodeId:
  *                 type: integer
- *                 nullable: true
  *     responses:
  *       200:
- *         description: Updated
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Periode updated
  *       404:
- *         description: Not found
+ *         description: Periode not found
  */
 export const updatePeriode = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  const { year, month, week, startedDate, endDate, typePeriodeId = null } = req.body || {};
   try {
-    const result = await periodeService.updatePeriode(id, {
-      year: Number(year),
-      month: Number(month),
-      week: Number(week),
-      startedDate,
-      endDate,
-      typePeriodeId: typePeriodeId != null ? Number(typePeriodeId) : null
-    });
+    const result = await periodeService.updatePeriode(id, req.body);
     if (!result) return res.status(404).json({ error: 'Periode not found' });
     res.json({ data: result });
   } catch (err) {
@@ -206,9 +123,9 @@ export const updatePeriode = asyncHandler(async (req, res) => {
 
 /**
  * @openapi
- * /api/periodes/{id}/activate:
- *   post:
- *     summary: Activate Periode
+ * /api/periodes/{id}:
+ *   get:
+ *     summary: Get periode by ID
  *     tags: [Periodes]
  *     security:
  *       - bearerAuth: []
@@ -216,18 +133,71 @@ export const updatePeriode = asyncHandler(async (req, res) => {
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: Activated
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Periode found
  *       404:
- *         description: Not found
+ *         description: Periode not found
+ */
+export const getPeriodeById = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const periode = await periodeService.getPeriodeById(id);
+  if (!periode) return res.status(404).json({ error: 'Periode not found' });
+  res.json({ data: periode });
+});
+
+/**
+ * @openapi
+ * /api/periodes:
+ *   get:
+ *     summary: List all active periodes with pagination
+ *     tags: [Periodes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Paginated list of periodes
+ */
+export const listActivePeriodes = asyncHandler(async (req, res) => {
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await periodeService.listActivePeriodes(page, pageSize);
+  res.json(result);
+});
+
+/**
+ * @openapi
+ * /api/periodes/{id}/activate:
+ *   post:
+ *     summary: Activate a periode
+ *     tags: [Periodes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Periode activated
+ *       404:
+ *         description: Periode not found
  */
 export const activatePeriode = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
@@ -245,7 +215,7 @@ export const activatePeriode = asyncHandler(async (req, res) => {
  * @openapi
  * /api/periodes/{id}/deactivate:
  *   post:
- *     summary: Deactivate Periode
+ *     summary: Deactivate a periode
  *     tags: [Periodes]
  *     security:
  *       - bearerAuth: []
@@ -253,18 +223,13 @@ export const activatePeriode = asyncHandler(async (req, res) => {
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: Deactivated
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Periode deactivated
  *       404:
- *         description: Not found
+ *         description: Periode not found
  */
 export const deactivatePeriode = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
@@ -282,124 +247,136 @@ export const deactivatePeriode = asyncHandler(async (req, res) => {
  * @openapi
  * /api/periodes/by-type:
  *   get:
- *     summary: List active Periodes by TypePeriode selector
- *     description: Provide one of typePeriodeId or typePeriodeName, or exactly one of hebdomadaire/mensuel; optional year and month filters apply to the resolved type. 
+ *     summary: List periodes by type with pagination
  *     tags: [Periodes]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: typePeriodeId
- *         schema: { type: integer, nullable: true }
+ *         schema:
+ *           type: integer
  *       - in: query
  *         name: typePeriodeName
- *         schema: { type: string, nullable: true }
+ *         schema:
+ *           type: string
  *       - in: query
  *         name: hebdomadaire
- *         schema: { type: boolean, nullable: true }
+ *         schema:
+ *           type: boolean
  *       - in: query
  *         name: mensuel
- *         schema: { type: boolean, nullable: true }
+ *         schema:
+ *           type: boolean
  *       - in: query
  *         name: year
- *         schema: { type: integer, nullable: true }
+ *         schema:
+ *           type: integer
  *       - in: query
  *         name: month
  *         schema:
  *           type: integer
- *           minimum: 1
- *           maximum: 12
- *           nullable: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: List filtered by type
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Paginated list of periodes
  */
 export const listPeriodesByType = asyncHandler(async (req, res) => {
-  const {
-    typePeriodeId = null,
-    typePeriodeName = null,
-    hebdomadaire = null,
-    mensuel = null,
-    year = null,
-    month = null
-  } = req.query || {};
-
-  try {
-    const rows = await periodeService.listPeriodesByType({
-      typePeriodeId,
-      typePeriodeName,
-      hebdomadaire,
-      mensuel,
-      year,
-      month
-    });
-    return res.json({ data: rows });
-  } catch (err) {
-    const { status, message } = mapSqlError(err);
-    return res.status(status).json({ error: message });
-  }
+  const filters = {
+    typePeriodeId: req.query.typePeriodeId,
+    typePeriodeName: req.query.typePeriodeName,
+    hebdomadaire: req.query.hebdomadaire === 'true',
+    mensuel: req.query.mensuel === 'true',
+    year: req.query.year,
+    month: req.query.month
+  };
+  
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await periodeService.listPeriodesByType(filters, page, pageSize);
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/periodes/years:
  *   get:
- *     summary: List active years that have periodes
- *     tags: [Periodes]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Distinct active years
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       year:
- *                         type: integer
- */
-export const listPeriodeYears = asyncHandler(async (_req, res) => {
-  const rows = await periodeService.listPeriodeYears();
-  return res.json({ data: rows });
-});
-
-/**
- * @openapi
- * /api/periodes/years/{year}:
- *   get:
- *     summary: List active periodes for a given year
+ *     summary: List distinct years with pagination
  *     tags: [Periodes]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: year
- *         required: true
- *         schema: { type: integer }
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: List for the specified year
+ *         description: Paginated list of years
+ */
+export const listYears = asyncHandler(async (req, res) => {
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await periodeService.listYears(page, pageSize);
+  res.json(result);
+});
+
+/**
+ * @openapi
+ * /api/periodes/by-year:
+ *   get:
+ *     summary: List periodes by year with pagination
+ *     tags: [Periodes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Paginated list of periodes
  *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Year is required
  */
 export const listPeriodesByYear = asyncHandler(async (req, res) => {
-  const year = Number(req.params.year);
-  const rows = await periodeService.listPeriodesByYear(year);
-  return res.json({ data: rows });
+  const year = req.query.year;
+  if (!year) {
+    return res.status(400).json({ error: 'Year parameter is required' });
+  }
+  
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await periodeService.listPeriodesByYear(year, page, pageSize);
+  res.json(result);
 });
