@@ -233,15 +233,19 @@ export const SQL = {
     AUDITLOG_EXPORT_WINDOW: 'EXEC dbo.usp_AuditLog_ExportWindow @fromUtc=:fromUtc, @toUtc=:toUtc, @lastId=:lastId, @batchSize=:batchSize',
     AUDITLOG_GET_BY_ID: 'EXEC dbo.usp_AuditLog_GetById @id=:id',
     AUDITLOG_LATEST_PER_MODULE: 'EXEC dbo.usp_AuditLog_LatestPerModule',
-    AUDITLOG_LIST_ACTIONS: 'EXEC dbo.usp_AuditLog_ListActions @module=:module',
-    AUDITLOG_LIST_MODULES: 'EXEC dbo.usp_AuditLog_ListModules',
-    AUDITLOG_LIST_USERS: 'EXEC dbo.usp_AuditLog_ListUsers @module=:module, @action=:action',
+    
+    // Updated with pagination
+    AUDITLOG_LIST_ACTIONS: 'EXEC dbo.usp_AuditLog_ListActions @module=:module, @pageNumber=:pageNumber, @pageSize=:pageSize',
+    AUDITLOG_LIST_MODULES: 'EXEC dbo.usp_AuditLog_ListModules @pageNumber=:pageNumber, @pageSize=:pageSize',
+    AUDITLOG_LIST_USERS: 'EXEC dbo.usp_AuditLog_ListUsers @module=:module, @action=:action, @pageNumber=:pageNumber, @pageSize=:pageSize',
+    
     AUDITLOG_PURGE_ROLLING: 'EXEC dbo.usp_AuditLog_PurgeRolling @retainDays=:retainDays, @module=:module, @action=:action',
     AUDITLOG_TOP_ACTIONS: 'EXEC dbo.usp_AuditLog_TopActions @fromUtc=:fromUtc, @toUtc=:toUtc, @topN=:topN, @module=:module',
     AUDITLOG_TOP_USERS: 'EXEC dbo.usp_AuditLog_TopUsers @fromUtc=:fromUtc, @toUtc=:toUtc, @topN=:topN, @module=:module, @action=:action',
     AUDITLOG_WRITE: 'EXEC dbo.usp_AuditLog_Write @module=:module, @action=:action, @objectId=:objectId, @scope=:scope, @userId=:userId, @message=:message, @machineIp=:ip, @description=:description',
     AUDITLOG_WRITE_FROM_SESSION: 'EXEC dbo.usp_AuditLog_WriteFromSession @module=:module, @action=:action, @objectId=:objectId, @scope=:scope, @message=:message, @machineIp=:ip, @description=:description',
   },
+
 
   TYPE_PERIODE: {
     TYPE_PERIODE_CREATE: `

@@ -183,7 +183,7 @@ export const latestPerModule = asyncHandler(async (req, res) => {
  * @openapi
  * /api/audit-logs/actions:
  *   get:
- *     summary: List distinct actions
+ *     summary: List distinct actions with pagination
  *     tags: [AuditLogs]
  *     parameters:
  *       - in: query
@@ -191,36 +191,68 @@ export const latestPerModule = asyncHandler(async (req, res) => {
  *         schema:
  *           type: string
  *           nullable: true
+ *         description: Filter by module name
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of records per page
  *     responses:
  *       200:
- *         description: List of action names
+ *         description: Paginated list of action names
  */
 export const listActions = asyncHandler(async (req, res) => {
   const module = req.query.module || null;
-  const data = await auditlogService.listActions(module);
-  res.json({ data });
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await auditlogService.listActions(module, page, pageSize);
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/audit-logs/modules:
  *   get:
- *     summary: List distinct modules
+ *     summary: List distinct modules with pagination
  *     tags: [AuditLogs]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of records per page
  *     responses:
  *       200:
- *         description: List of module names
+ *         description: Paginated list of module names
  */
 export const listModules = asyncHandler(async (req, res) => {
-  const data = await auditlogService.listModules();
-  res.json({ data });
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await auditlogService.listModules(page, pageSize);
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/audit-logs/users:
  *   get:
- *     summary: List distinct user IDs
+ *     summary: List distinct user IDs with pagination
  *     tags: [AuditLogs]
  *     parameters:
  *       - in: query
@@ -228,20 +260,37 @@ export const listModules = asyncHandler(async (req, res) => {
  *         schema:
  *           type: string
  *           nullable: true
+ *         description: Filter by module name
  *       - in: query
  *         name: action
  *         schema:
  *           type: string
  *           nullable: true
+ *         description: Filter by action name
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of records per page
  *     responses:
  *       200:
- *         description: List of user IDs
+ *         description: Paginated list of user IDs
  */
 export const listUsers = asyncHandler(async (req, res) => {
   const module = req.query.module || null;
   const action = req.query.action || null;
-  const data = await auditlogService.listUsers(module, action);
-  res.json({ data });
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await auditlogService.listUsers(module, action, page, pageSize);
+  res.json(result);
 });
 
 /**
