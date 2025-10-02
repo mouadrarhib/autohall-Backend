@@ -42,7 +42,6 @@ import * as groupementService from '../services/groupement.service.js';
  */
 export const createGroupement = asyncHandler(async (req, res) => {
   const { name, active = true } = req.body || {};
-
   try {
     const result = await groupementService.createGroupement(name, active);
     res.locals.objectId = result.id; // for audit
@@ -74,11 +73,9 @@ export const createGroupement = asyncHandler(async (req, res) => {
 export const getGroupementById = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const groupement = await groupementService.getGroupementById(id);
-  
   if (!groupement) {
     return res.status(404).json({ error: 'Groupement not found' });
   }
-  
   res.json({ data: groupement });
 });
 
@@ -156,14 +153,11 @@ export const searchGroupements = asyncHandler(async (req, res) => {
 export const updateGroupement = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const { name = null, active = null } = req.body || {};
-
   try {
     const result = await groupementService.updateGroupement(id, name, active);
-    
     if (!result) {
       return res.status(404).json({ error: 'Groupement not found' });
     }
-    
     res.locals.objectId = id; // for audit
     res.json({ data: result });
   } catch (err) {
@@ -171,6 +165,7 @@ export const updateGroupement = asyncHandler(async (req, res) => {
     res.status(status).json({ error: message });
   }
 });
+
 /**
  * @openapi
  * /api/groupements/{id}/activate:
@@ -191,14 +186,11 @@ export const updateGroupement = asyncHandler(async (req, res) => {
  */
 export const activateGroupement = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-
   try {
     const result = await groupementService.activateGroupement(id);
-    
     if (!result) {
       return res.status(404).json({ error: 'Groupement not found' });
     }
-    
     res.locals.objectId = id; // for audit
     res.json({ data: result });
   } catch (err) {
@@ -227,18 +219,79 @@ export const activateGroupement = asyncHandler(async (req, res) => {
  */
 export const deactivateGroupement = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-
   try {
     const result = await groupementService.deactivateGroupement(id);
-    
     if (!result) {
       return res.status(404).json({ error: 'Groupement not found' });
     }
-    
     res.locals.objectId = id; // for audit
     res.json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);
     res.status(status).json({ error: message });
   }
+});
+
+/**
+ * @openapi
+ * /api/groupements/{id}/users:
+ *   get:
+ *     summary: List active users in a groupement (paginated)
+ *     tags: [Groupements]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Groupement ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of records per page
+ *     responses:
+ *       200:
+ *         description: Paginated list of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     pageSize:
+ *                       type: integer
+ *                     totalRecords:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *       404:
+ *         description: Groupement not found
+ */
+export const listUsersByGroupement = asyncHandler(async (req, res) => {
+  const idGroupement = Number(req.params.id);
+  
+  // Parse pagination parameters
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  // Call service with pagination
+  const result = await groupementService.listUsersByGroupement(idGroupement, page, pageSize);
+  
+  res.json(result);
 });
