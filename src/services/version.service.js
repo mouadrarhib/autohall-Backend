@@ -1,7 +1,13 @@
+// src/services/version.service.js
+
 import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { QueryTypes } from 'sequelize';
-import { getFirstResult, prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { 
+  getFirstResult, 
+  prepareStoredProcParams 
+} from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 export async function createVersion(data) {
   const params = prepareStoredProcParams({
@@ -44,28 +50,50 @@ export async function getVersionById(id) {
   return getFirstResult(rows);
 }
 
-export async function listVersions(idModele = null, onlyActive = true) {
+/**
+ * List versions with pagination
+ */
+export async function listVersions(idModele = null, onlyActive = true, page = 1, pageSize = 10) {
   const params = prepareStoredProcParams({
     idModele: idModele ? Number(idModele) : null,
-    onlyActive: onlyActive ? 1 : 0
+    onlyActive: onlyActive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  const rows = await sequelize.query(SQL.VERSION.VERSION_LIST, {
-    replacements: params,
-    type: QueryTypes.SELECT
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.VERSION.VERSION_LIST, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listVersions service:', error);
+    throw error;
+  }
 }
 
-export async function listVersionsByModele(idModele, onlyActive = true) {
+/**
+ * List versions by modele with pagination
+ */
+export async function listVersionsByModele(idModele, onlyActive = true, page = 1, pageSize = 10) {
   const params = prepareStoredProcParams({
     idModele: Number(idModele),
-    onlyActive: onlyActive ? 1 : 0
+    onlyActive: onlyActive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  const rows = await sequelize.query(SQL.VERSION.VERSION_LIST_BY_MODELE, {
-    replacements: params,
-    type: QueryTypes.SELECT
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.VERSION.VERSION_LIST_BY_MODELE, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listVersionsByModele service:', error);
+    throw error;
+  }
 }
 
 export async function searchVersions(q, idModele = null, onlyActive = true) {
@@ -96,4 +124,3 @@ export async function deactivateVersion(id) {
   });
   return getFirstResult(rows);
 }
-
