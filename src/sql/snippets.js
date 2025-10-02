@@ -285,5 +285,123 @@ export const SQL = {
       EXEC dbo.sp_Periode_ListByYear
         @year = :year
     `,
+  },
+  
+  TYPE_VENTE: {
+    TYPE_VENTE_CREATE: `
+      EXEC dbo.sp_TypeVente_Create
+        @name = :name
+    `,
+    TYPE_VENTE_UPDATE: `
+      EXEC dbo.sp_TypeVente_Update
+        @id = :id,
+        @name = :name
+    `,
+    TYPE_VENTE_GET_BY_ID_ACTIVE: `
+      EXEC dbo.sp_TypeVente_GetByIdActive
+        @id = :id
+    `,
+    TYPE_VENTE_LIST_ACTIVE: `
+      EXEC dbo.sp_TypeVente_ListActive
+    `,
+    TYPE_VENTE_ACTIVATE: `
+      EXEC dbo.sp_TypeVente_Activate
+        @id = :id
+    `,
+    TYPE_VENTE_DEACTIVATE: `
+      EXEC dbo.sp_TypeVente_Deactivate
+        @id = :id
+    `
+  },
+
+  TYPE_OBJECTIF: {
+    TYPE_OBJECTIF_CREATE: `
+      EXEC dbo.sp_TypeObjectif_Create
+        @name = :name
+    `,
+    TYPE_OBJECTIF_UPDATE: `
+      EXEC dbo.sp_TypeObjectif_Update
+        @id = :id,
+        @name = :name
+    `,
+    TYPE_OBJECTIF_GET_BY_ID_ACTIVE: `
+      EXEC dbo.sp_TypeObjectif_GetByIdActive
+        @id = :id
+    `,
+    TYPE_OBJECTIF_LIST_ACTIVE: `
+      EXEC dbo.sp_TypeObjectif_ListActive
+    `,
+    TYPE_OBJECTIF_ACTIVATE: `
+      EXEC dbo.sp_TypeObjectif_Activate
+        @id = :id
+    `,
+    TYPE_OBJECTIF_DEACTIVATE: `
+      EXEC dbo.sp_TypeObjectif_Deactivate
+        @id = :id
+    `
+  },
+
+  OBJECTIF: {
+    OBJECTIF_CREATE: `
+      EXEC dbo.sp_Objectif_Create
+        @userId = :userId,
+        @groupementId = :groupementId,
+        @siteId = :siteId,
+        @periodeId = :periodeId,
+        @typeVenteId = :typeVenteId,
+        @typeObjectifId = :typeObjectifId,
+        @marqueId = :marqueId,
+        @modeleId = :modeleId,
+        @versionId = :versionId,
+        @volume = :volume,
+        @SalePrice = :SalePrice,
+        @TMDirect = :TMDirect,
+        @MargeInterGroupe = :MargeInterGroupe
+    `,
+    OBJECTIF_UPDATE: `
+      EXEC dbo.sp_Objectif_Update
+        @id = :id,
+        @userId = :userId,
+        @groupementId = :groupementId,
+        @siteId = :siteId,
+        @periodeId = :periodeId,
+        @typeVenteId = :typeVenteId,
+        @typeObjectifId = :typeObjectifId,
+        @marqueId = :marqueId,
+        @modeleId = :modeleId,
+        @versionId = :versionId,
+        @volume = :volume,
+        @SalePrice = :SalePrice,
+        @TMDirect = :TMDirect,
+        @MargeInterGroupe = :MargeInterGroupe,
+        @updatedUserId = :updatedUserId
+    `,
+    OBJECTIF_GET_BY_ID_ACTIVE: `
+      EXEC dbo.sp_Objectif_GetByIdActive
+        @id = :id
+    `,
+    OBJECTIF_LIST_ACTIVE: `
+      EXEC dbo.sp_Objectif_ListActive
+        @userId = :userId,
+        @periodeId = :periodeId,
+        @groupementId = :groupementId,
+        @siteId = :siteId
+    `,
+    OBJECTIF_ACTIVATE: `
+      EXEC dbo.sp_Objectif_Activate
+        @id = :id
+    `,
+    OBJECTIF_DEACTIVATE: `
+      EXEC dbo.sp_Objectif_Deactivate
+        @id = :id
+    `,
+    OBJECTIF_VIEW: `
+      SELECT * FROM dbo.V_Objectif
+      WHERE (@userId IS NULL OR createdUserId = @userId)
+        AND (@periodeId IS NULL OR periodeID = @periodeId)
+        AND (@groupementId IS NULL OR groupementID = @groupementId)
+        AND (@siteId IS NULL OR SiteID = @siteId)
+      ORDER BY periodeID DESC, createdUserId ASC, id DESC
+    `
   }
 };
