@@ -2,7 +2,6 @@
 
 import { asyncHandler } from '../helpers/asyncHandler.js';
 import { mapSqlError } from '../helpers/sqlErrorMapper.js';
-import { parseBoolean } from '../helpers/queryHelpers.js';
 import * as versionService from '../services/version.service.js';
 
 /**
@@ -16,41 +15,56 @@ import * as versionService from '../services/version.service.js';
  * @openapi
  * /api/versions:
  *   post:
- *     summary: Create a new version
+ *     summary: Create a new Version
  *     tags: [Versions]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
- *               - idModele
+ *             required: [name, idModele, volume, price, tm, margin]
  *             properties:
  *               name:
  *                 type: string
- *                 example: "1.5 DCI Tech"
+ *                 maxLength: 100
+ *                 example: "Version X"
  *               idModele:
  *                 type: integer
- *                 example: 12
- *               active:
- *                 type: boolean
- *                 default: true
+ *                 example: 1
+ *               volume:
+ *                 type: integer
+ *                 minimum: 1
+ *                 example: 100
+ *               price:
+ *                 type: number
+ *                 format: decimal
+ *                 example: 25000.00
+ *               tm:
+ *                 type: number
+ *                 format: decimal
+ *                 maximum: 0.40
+ *                 example: 0.15
+ *               margin:
+ *                 type: number
+ *                 format: decimal
+ *                 maximum: 0.40
+ *                 example: 0.20
  *     responses:
  *       201:
- *         description: Version created successfully
+ *         description: Created
  *       400:
- *         description: Validation error or Modele inactive
- *       404:
- *         description: Modele not found
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 export const createVersion = asyncHandler(async (req, res) => {
-  const { name, idModele, active = true } = req.body || {};
-
   try {
-    const result = await versionService.createVersion(name, idModele, active);
-    res.locals.objectId = result.id; // for audit
+    const result = await versionService.createVersion(req.body);
     res.status(201).json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);
@@ -61,170 +75,58 @@ export const createVersion = asyncHandler(async (req, res) => {
 /**
  * @openapi
  * /api/versions/{id}:
- *   get:
- *     summary: Get version by ID
- *     tags: [Versions]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Version found
- *       404:
- *         description: Version not found
- */
-export const getVersionById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const version = await versionService.getVersionById(id);
-  
-  if (!version) {
-    return res.status(404).json({ error: 'Version not found' });
-  }
-  
-  res.json({ data: version });
-});
-
-/**
- * @openapi
- * /api/versions:
- *   get:
- *     summary: List versions
- *     tags: [Versions]
- *     parameters:
- *       - in: query
- *         name: idModele
- *         schema:
- *           type: integer
- *           nullable: true
- *       - in: query
- *         name: onlyActive
- *         schema:
- *           type: boolean
- *           default: true
- *     responses:
- *       200:
- *         description: List of versions
- */
-export const listVersions = asyncHandler(async (req, res) => {
-  const { idModele } = req.query;
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  
-  const versions = await versionService.listVersions(idModele, onlyActive);
-  res.json({ data: versions });
-});
-
-/**
- * @openapi
- * /api/versions/by-modele/{idModele}:
- *   get:
- *     summary: List versions by modele
- *     tags: [Versions]
- *     parameters:
- *       - in: path
- *         name: idModele
- *         required: true
- *         schema:
- *           type: integer
- *       - in: query
- *         name: onlyActive
- *         schema:
- *           type: boolean
- *           default: true
- *     responses:
- *       200:
- *         description: List of versions for the modele
- */
-export const listVersionsByModele = asyncHandler(async (req, res) => {
-  const idModele = Number(req.params.idModele);
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  
-  const versions = await versionService.listVersionsByModele(idModele, onlyActive);
-  res.json({ data: versions });
-});
-
-/**
- * @openapi
- * /api/versions/search:
- *   get:
- *     summary: Search versions
- *     tags: [Versions]
- *     parameters:
- *       - in: query
- *         name: q
- *         required: true
- *         schema:
- *           type: string
- *         description: Search term
- *       - in: query
- *         name: idModele
- *         schema:
- *           type: integer
- *           nullable: true
- *       - in: query
- *         name: onlyActive
- *         schema:
- *           type: boolean
- *           default: true
- *     responses:
- *       200:
- *         description: Search results
- *       400:
- *         description: Invalid search query
- */
-export const searchVersions = asyncHandler(async (req, res) => {
-  const { q, idModele } = req.query;
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  
-  const results = await versionService.searchVersions(q, idModele, onlyActive);
-  res.json({ data: results });
-});
-
-/**
- * @openapi
- * /api/versions/{id}:
  *   patch:
- *     summary: Update version
+ *     summary: Update Version
  *     tags: [Versions]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         schema:
- *           type: integer
+ *         schema: { type: integer }
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [name, idModele, volume, price, tm, margin]
  *             properties:
  *               name:
  *                 type: string
+ *                 maxLength: 100
  *               idModele:
  *                 type: integer
- *               active:
- *                 type: boolean
+ *               volume:
+ *                 type: integer
+ *                 minimum: 1
+ *               price:
+ *                 type: number
+ *                 format: decimal
+ *               tm:
+ *                 type: number
+ *                 format: decimal
+ *                 maximum: 0.40
+ *               margin:
+ *                 type: number
+ *                 format: decimal
+ *                 maximum: 0.40
  *     responses:
  *       200:
- *         description: Version updated
+ *         description: Updated
  *       404:
- *         description: Version not found
+ *         description: Not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 export const updateVersion = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-  const { name = null, idModele = null, active = null } = req.body || {};
-
   try {
-    const result = await versionService.updateVersion(id, name, idModele, active);
-    
-    if (!result) {
-      return res.status(404).json({ error: 'Version not found' });
-    }
-    
-    res.locals.objectId = id; // for audit
+    const result = await versionService.updateVersion(id, req.body);
+    if (!result) return res.status(404).json({ error: 'Version not found' });
     res.json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);
@@ -234,33 +136,157 @@ export const updateVersion = asyncHandler(async (req, res) => {
 
 /**
  * @openapi
- * /api/versions/{id}/activate:
- *   post:
- *     summary: Activate version
+ * /api/versions/{id}:
+ *   get:
+ *     summary: Get Version by ID
  *     tags: [Versions]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         schema:
- *           type: integer
+ *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Version activated
+ *         description: Found
  *       404:
- *         description: Version not found
+ *         description: Not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+export const getVersionById = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const row = await versionService.getVersionById(id);
+  if (!row) return res.status(404).json({ error: 'Version not found' });
+  res.json({ data: row });
+});
+
+/**
+ * @openapi
+ * /api/versions:
+ *   get:
+ *     summary: List Versions with optional filters
+ *     tags: [Versions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: idModele
+ *         schema: { type: integer }
+ *         description: Filter by modele ID
+ *       - in: query
+ *         name: onlyActive
+ *         schema: { type: boolean, default: true }
+ *         description: Show only active versions
+ *     responses:
+ *       200:
+ *         description: List
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+export const listVersions = asyncHandler(async (req, res) => {
+  const { idModele, onlyActive } = req.query;
+  const rows = await versionService.listVersions(idModele, onlyActive !== 'false');
+  res.json({ data: rows });
+});
+
+/**
+ * @openapi
+ * /api/versions/by-modele:
+ *   get:
+ *     summary: List Versions by Modele
+ *     tags: [Versions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: idModele
+ *         required: true
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: onlyActive
+ *         schema: { type: boolean, default: true }
+ *     responses:
+ *       200:
+ *         description: List
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+export const listVersionsByModele = asyncHandler(async (req, res) => {
+  const { idModele, onlyActive } = req.query;
+  const rows = await versionService.listVersionsByModele(idModele, onlyActive !== 'false');
+  res.json({ data: rows });
+});
+
+/**
+ * @openapi
+ * /api/versions/search:
+ *   get:
+ *     summary: Search Versions
+ *     tags: [Versions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: Search query
+ *       - in: query
+ *         name: idModele
+ *         schema: { type: integer }
+ *         description: Filter by modele ID
+ *       - in: query
+ *         name: onlyActive
+ *         schema: { type: boolean, default: true }
+ *     responses:
+ *       200:
+ *         description: Search results
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+export const searchVersions = asyncHandler(async (req, res) => {
+  const { q, idModele, onlyActive } = req.query;
+  const rows = await versionService.searchVersions(q || '', idModele, onlyActive !== 'false');
+  res.json({ data: rows });
+});
+
+/**
+ * @openapi
+ * /api/versions/{id}/activate:
+ *   post:
+ *     summary: Activate Version
+ *     tags: [Versions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Activated
+ *       404:
+ *         description: Not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 export const activateVersion = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-
   try {
     const result = await versionService.activateVersion(id);
-    
-    if (!result) {
-      return res.status(404).json({ error: 'Version not found' });
-    }
-    
-    res.locals.objectId = id; // for audit
+    if (!result) return res.status(404).json({ error: 'Version not found' });
     res.json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);
@@ -272,31 +298,30 @@ export const activateVersion = asyncHandler(async (req, res) => {
  * @openapi
  * /api/versions/{id}/deactivate:
  *   post:
- *     summary: Deactivate version
+ *     summary: Deactivate Version
  *     tags: [Versions]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         schema:
- *           type: integer
+ *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Version deactivated
+ *         description: Deactivated
  *       404:
- *         description: Version not found
+ *         description: Not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 export const deactivateVersion = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
-
   try {
     const result = await versionService.deactivateVersion(id);
-    
-    if (!result) {
-      return res.status(404).json({ error: 'Version not found' });
-    }
-    
-    res.locals.objectId = id; // for audit
+    if (!result) return res.status(404).json({ error: 'Version not found' });
     res.json({ data: result });
   } catch (err) {
     const { status, message } = mapSqlError(err);

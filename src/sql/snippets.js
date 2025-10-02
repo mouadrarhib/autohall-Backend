@@ -115,23 +115,45 @@ export const SQL = {
 
   VERSION: {
     VERSION_CREATE: `
-      DECLARE @NewId INT;
       EXEC dbo.sp_Version_Create
-        @Name=:name,
-        @IdModele=:idModele,
-        @Active=:active,
-        @NewVersionId=@NewId OUTPUT;
-      SELECT id=@NewId;
+        @name = :name,
+        @idModele = :idModele,
+        @volume = :volume,
+        @price = :price,
+        @tm = :tm,
+        @margin = :margin,
+        @newId = NULL OUTPUT
     `,
-    VERSION_GET_BY_ID: 'EXEC dbo.sp_Version_GetById @Id=:id',
-    VERSION_LIST: 'EXEC dbo.sp_Version_List @IdModele=:idModele, @OnlyActive=:onlyActive',
-    VERSION_LIST_BY_MODELE: 'EXEC dbo.sp_Version_ListByModele @IdModele=:idModele, @OnlyActive=:onlyActive',
-    VERSION_SEARCH: 'EXEC dbo.sp_Version_Search @q=:q, @IdModele=:idModele, @OnlyActive=:onlyActive',
-    VERSION_UPDATE: 'EXEC dbo.sp_Version_Update @Id=:id, @Name=:name, @IdModele=:idModele, @Active=:active',
-    VERSION_ACTIVATE: 'EXEC dbo.sp_Version_Activate @Id=:id',
-    VERSION_DEACTIVATE: 'EXEC dbo.sp_Version_Deactivate @Id=:id',
-    VERSION_DELETE: 'EXEC dbo.sp_Version_Delete @Id=:id',
+    VERSION_UPDATE: `
+      EXEC dbo.sp_Version_Update
+        @id = :id,
+        @name = :name,
+        @idModele = :idModele,
+        @volume = :volume,
+        @price = :price,
+        @tm = :tm,
+        @margin = :margin
+    `,
+    VERSION_GET_BY_ID: `
+      EXEC dbo.sp_Version_GetById @id = :id
+    `,
+    VERSION_LIST: `
+      EXEC dbo.sp_Version_List @idModele = :idModele, @onlyActive = :onlyActive
+    `,
+    VERSION_LIST_BY_MODELE: `
+      EXEC dbo.sp_Version_ListByModele @idModele = :idModele, @onlyActive = :onlyActive
+    `,
+    VERSION_SEARCH: `
+      EXEC dbo.sp_Version_Search @q = :q, @idModele = :idModele, @onlyActive = :onlyActive
+    `,
+    VERSION_ACTIVATE: `
+      EXEC dbo.sp_Version_Activate @id = :id
+    `,
+    VERSION_DEACTIVATE: `
+      EXEC dbo.sp_Version_Deactivate @id = :id
+    `
   },
+
 
   SUCCURSALE: {
     SUCCURSALE_CREATE: `
