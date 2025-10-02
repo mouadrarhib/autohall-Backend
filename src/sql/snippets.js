@@ -44,14 +44,17 @@ export const SQL = {
   },
 
   USER_PERMISSION: {
-    UP_ADD: 'EXEC dbo.usp_UserPermission_Add @idUser=:idUser, @idPermission=:idPermission',
-    UP_ACTIVATE: 'EXEC dbo.usp_UserPermission_Activate @idUser=:idUser, @idPermission=:idPermission',
-    UP_DEACTIVATE: 'EXEC dbo.usp_UserPermission_Deactivate @idUser=:idUser, @idPermission=:idPermission',
-    UP_REMOVE: 'EXEC dbo.usp_UserPermission_Remove @idUser=:idUser, @idPermission=:idPermission, @hardDelete=:hardDelete',
-    UP_SET_ACTIVE: 'EXEC dbo.usp_UserPermission_SetActive @idUser=:idUser, @idPermission=:idPermission, @active=:active',
-    UP_LIST_BY_USER: 'EXEC dbo.usp_UserPermission_ListByUser @idUser=:idUser, @active=:active',
-    UP_LIST_BY_PERM: 'EXEC dbo.usp_UserPermission_ListByPermission @idPermission=:idPermission, @active=:active',
-    UP_HAS_BY_NAME: 'EXEC dbo.usp_UserPermission_HasByName @idUser=:idUser, @permissionName=:permissionName',
+    UP_ADD: `EXEC dbo.usp_UserPermission_Add @idUser=:idUser, @idPermission=:idPermission`,
+    UP_ACTIVATE: `EXEC dbo.usp_UserPermission_Activate @idUser=:idUser, @idPermission=:idPermission`,
+    UP_DEACTIVATE: `EXEC dbo.usp_UserPermission_Deactivate @idUser=:idUser, @idPermission=:idPermission`,
+    UP_REMOVE: `EXEC dbo.usp_UserPermission_Remove @idUser=:idUser, @idPermission=:idPermission, @hardDelete=:hardDelete`,
+    UP_SET_ACTIVE: `EXEC dbo.usp_UserPermission_SetActive @idUser=:idUser, @idPermission=:idPermission, @active=:active`,
+    
+    // Updated with pagination parameters
+    UP_LIST_BY_USER: `EXEC dbo.usp_UserPermission_ListByUser @idUser=:idUser, @active=:active, @pageNumber=:pageNumber, @pageSize=:pageSize`,
+    UP_LIST_BY_PERM: `EXEC dbo.usp_UserPermission_ListByPermission @idPermission=:idPermission, @active=:active, @pageNumber=:pageNumber, @pageSize=:pageSize`,
+    
+    UP_HAS_BY_NAME: `EXEC dbo.usp_UserPermission_HasByName @idUser=:idUser, @permissionName=:permissionName`,
   },
 
   ROLE: {
