@@ -4,7 +4,12 @@ import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { QueryTypes } from 'sequelize';
 import { parseBoolean } from '../helpers/queryHelpers.js';
-import { getFirstResult, hasResults, prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { 
+  getFirstResult, 
+  hasResults, 
+  prepareStoredProcParams 
+} from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 /**
  * Create a new filiale
@@ -17,20 +22,17 @@ export async function createFiliale(name, active = true) {
     name: name.trim(),
     active: active ? 1 : 0
   });
-
   try {
     const result = await sequelize.query(SQL.FILIALE.FILIALE_CREATE, {
       replacements: params,
       type: QueryTypes.SELECT
     });
-
     // sp_InsertFiliale returns { NewId: X }
     const newIdRow = Array.isArray(result) ? result.find(r => typeof r?.NewId !== 'undefined') : null;
     const newId = newIdRow?.NewId;
     if (!newId) {
       throw new Error('Create operation did not return new ID');
     }
-
     // Get the created filiale
     const createdFiliale = await getFilialeById(newId);
     return createdFiliale || {
@@ -58,14 +60,27 @@ export async function getFilialeById(id) {
 }
 
 /**
- * List all filiales
- * @returns {Array} Array of filiales
+ * List all filiales with pagination
+ * @param {number} page - Page number
+ * @param {number} pageSize - Records per page
+ * @returns {Object} Paginated filiales
  */
-export async function listFiliales() {
-  const rows = await sequelize.query(SQL.FILIALE.FILIALE_GET_ALL, {
-    type: QueryTypes.SELECT
+export async function listFiliales(page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.FILIALE.FILIALE_GET_ALL, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listFiliales service:', error);
+    throw error;
+  }
 }
 
 /**
@@ -81,7 +96,6 @@ export async function updateFiliale(id, name = null, active = null) {
     name: name ? name.trim() : null,
     active: active === null ? null : (active ? 1 : 0)
   });
-
   try {
     await sequelize.query(SQL.FILIALE.FILIALE_UPDATE, {
       replacements: params,
