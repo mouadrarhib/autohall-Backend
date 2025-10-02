@@ -193,6 +193,12 @@ export const SQL = {
     GROUPEMENT_ACTIVATE: 'EXEC dbo.sp_ActivateGroupement @id=:id',
     GROUPEMENT_DEACTIVATE: 'EXEC dbo.sp_DeactivateGroupement @id=:id',
     GROUPEMENT_SEARCH: 'EXEC dbo.sp_SearchGroupementByName @name=:name',
+    
+    // NEW: Add pagination support for users by groupement
+    USER_LIST_BY_GROUPEMENT: `EXEC dbo.sp_User_ListByGroupement 
+      @IdGroupement=:idGroupement, 
+      @pageNumber=:pageNumber, 
+      @pageSize=:pageSize`,
   },
 
   USERSITE: {
