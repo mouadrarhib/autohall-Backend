@@ -1,7 +1,6 @@
 // src/controllers/usersite.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import { parseBoolean, parseInteger } from '../helpers/queryHelpers.js';
 import * as usersiteService from '../services/usersite.service.js';
 
@@ -45,18 +44,16 @@ import * as usersiteService from '../services/usersite.service.js';
  *       404:
  *         description: Referenced entity not found
  */
-export const createUserSite = asyncHandler(async (req, res) => {
-  const { idGroupement, idSite, active = true } = req.body || {};
-
+export const createUserSite = async (req, res, next) => {
   try {
+    const { idGroupement, idSite, active = true } = req.body || {};
     const result = await usersiteService.createUserSite(idGroupement, idSite, active);
     res.locals.objectId = result.id; // for audit
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'UserSite created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -76,16 +73,20 @@ export const createUserSite = asyncHandler(async (req, res) => {
  *       404:
  *         description: UserSite not found
  */
-export const getUserSiteById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const usersite = await usersiteService.getUserSiteById(id);
-  
-  if (!usersite) {
-    return res.status(404).json({ error: 'UserSite not found' });
+export const getUserSiteById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const usersite = await usersiteService.getUserSiteById(id);
+    
+    if (!usersite) {
+      return next(new AppError('UserSite not found', 404));
+    }
+    
+    sendSuccess(res, usersite, 'UserSite retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  res.json({ data: usersite });
-});
+};
 
 /**
  * @openapi
@@ -97,10 +98,14 @@ export const getUserSiteById = asyncHandler(async (req, res) => {
  *       200:
  *         description: List of UserSites
  */
-export const listUserSites = asyncHandler(async (req, res) => {
-  const usersites = await usersiteService.listUserSites();
-  res.json({ data: usersites });
-});
+export const listUserSites = async (req, res, next) => {
+  try {
+    const usersites = await usersiteService.listUserSites();
+    sendSuccess(res, usersites, 'UserSites list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -139,20 +144,22 @@ export const listUserSites = asyncHandler(async (req, res) => {
  *       200:
  *         description: Search results
  */
-export const searchUserSites = asyncHandler(async (req, res) => {
-  const { idGroupement, groupement_name, idSite, site_type, onlyActive } = req.query;
-  
-  const filters = {
-    idGroupement: parseInteger(idGroupement),
-    groupement_name: groupement_name ? groupement_name.toString().trim() : null,
-    idSite: parseInteger(idSite),
-    site_type: site_type ? site_type.toString().trim() : null,
-    onlyActive: parseBoolean(onlyActive)
-  };
-  
-  const results = await usersiteService.searchUserSites(filters);
-  res.json({ data: results });
-});
+export const searchUserSites = async (req, res, next) => {
+  try {
+    const { idGroupement, groupement_name, idSite, site_type, onlyActive } = req.query;
+    const filters = {
+      idGroupement: parseInteger(idGroupement),
+      groupement_name: groupement_name ? groupement_name.toString().trim() : null,
+      idSite: parseInteger(idSite),
+      site_type: site_type ? site_type.toString().trim() : null,
+      onlyActive: parseBoolean(onlyActive)
+    };
+    const results = await usersiteService.searchUserSites(filters);
+    sendSuccess(res, results, 'Search completed successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -170,11 +177,15 @@ export const searchUserSites = asyncHandler(async (req, res) => {
  *       200:
  *         description: List of UserSites for the groupement
  */
-export const listUserSitesByGroupement = asyncHandler(async (req, res) => {
-  const idGroupement = Number(req.params.idGroupement);
-  const usersites = await usersiteService.listUserSitesByGroupement(idGroupement);
-  res.json({ data: usersites });
-});
+export const listUserSitesByGroupement = async (req, res, next) => {
+  try {
+    const idGroupement = Number(req.params.idGroupement);
+    const usersites = await usersiteService.listUserSitesByGroupement(idGroupement);
+    sendSuccess(res, usersites, 'UserSites by groupement retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -192,11 +203,15 @@ export const listUserSitesByGroupement = asyncHandler(async (req, res) => {
  *       200:
  *         description: List of UserSites for the site
  */
-export const listUserSitesBySite = asyncHandler(async (req, res) => {
-  const idSite = Number(req.params.idSite);
-  const usersites = await usersiteService.listUserSitesBySite(idSite);
-  res.json({ data: usersites });
-});
+export const listUserSitesBySite = async (req, res, next) => {
+  try {
+    const idSite = Number(req.params.idSite);
+    const usersites = await usersiteService.listUserSitesBySite(idSite);
+    sendSuccess(res, usersites, 'UserSites by site retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -233,24 +248,22 @@ export const listUserSitesBySite = asyncHandler(async (req, res) => {
  *       404:
  *         description: UserSite not found
  */
-export const updateUserSite = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { idGroupement, idSite, active } = req.body || {};
-
+export const updateUserSite = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { idGroupement, idSite, active } = req.body || {};
     const result = await usersiteService.updateUserSite(id, idGroupement, idSite, active);
     
     if (!result) {
-      return res.status(404).json({ error: 'UserSite not found' });
+      return next(new AppError('UserSite not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'UserSite updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -270,23 +283,21 @@ export const updateUserSite = asyncHandler(async (req, res) => {
  *       404:
  *         description: UserSite not found
  */
-export const activateUserSite = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const activateUserSite = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await usersiteService.activateUserSite(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'UserSite not found' });
+      return next(new AppError('UserSite not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'UserSite activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -306,20 +317,18 @@ export const activateUserSite = asyncHandler(async (req, res) => {
  *       404:
  *         description: UserSite not found
  */
-export const deactivateUserSite = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const deactivateUserSite = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await usersiteService.deactivateUserSite(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'UserSite not found' });
+      return next(new AppError('UserSite not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'UserSite deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
