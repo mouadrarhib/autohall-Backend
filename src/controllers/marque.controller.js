@@ -1,7 +1,6 @@
 // src/controllers/marque.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import { parseBoolean } from '../helpers/queryHelpers.js';
 import * as marqueService from '../services/marque.service.js';
 
@@ -45,17 +44,15 @@ import * as marqueService from '../services/marque.service.js';
  *       404:
  *         description: Filiale not found
  */
-export const createMarque = asyncHandler(async (req, res) => {
-  const { name, idFiliale, active = true } = req.body || {};
-
+export const createMarque = async (req, res, next) => {
   try {
+    const { name, idFiliale, active = true } = req.body || {};
     const result = await marqueService.createMarque(name, idFiliale, active);
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Marque created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -75,16 +72,20 @@ export const createMarque = asyncHandler(async (req, res) => {
  *       404:
  *         description: Marque not found
  */
-export const getMarqueById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const marque = await marqueService.getMarqueById(id);
-  
-  if (!marque) {
-    return res.status(404).json({ error: 'Marque not found' });
+export const getMarqueById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const marque = await marqueService.getMarqueById(id);
+    
+    if (!marque) {
+      return next(new AppError('Marque not found', 404));
+    }
+    
+    sendSuccess(res, marque, 'Marque retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  res.json({ data: marque });
-});
+};
 
 /**
  * @openapi
@@ -117,15 +118,19 @@ export const getMarqueById = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of marques
  */
-export const listMarques = asyncHandler(async (req, res) => {
-  const { idFiliale } = req.query;
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await marqueService.listMarques(idFiliale, onlyActive, page, pageSize);
-  res.json(result);
-});
+export const listMarques = async (req, res, next) => {
+  try {
+    const { idFiliale } = req.query;
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await marqueService.listMarques(idFiliale, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Marques list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -158,15 +163,19 @@ export const listMarques = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of marques for the filiale
  */
-export const listMarquesByFiliale = asyncHandler(async (req, res) => {
-  const idFiliale = Number(req.params.idFiliale);
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await marqueService.listMarquesByFiliale(idFiliale, onlyActive, page, pageSize);
-  res.json(result);
-});
+export const listMarquesByFiliale = async (req, res, next) => {
+  try {
+    const idFiliale = Number(req.params.idFiliale);
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await marqueService.listMarquesByFiliale(idFiliale, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Marques by filiale retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -214,33 +223,35 @@ export const listMarquesByFiliale = asyncHandler(async (req, res) => {
  *       400:
  *         description: Invalid or missing search query
  */
-export const searchMarques = asyncHandler(async (req, res) => {
-  // Prefer the explicit 'search' param; fall back to legacy 'q'
-  const rawSearch = req.query.search ?? req.query.q ?? '';
-  const search = String(rawSearch).trim();
-  if (!search) {
-    return res.status(400).json({
-      error: 'Missing search query. Provide ?search= (or legacy ?q=).'
-    });
+export const searchMarques = async (req, res, next) => {
+  try {
+    // Prefer the explicit 'search' param; fall back to legacy 'q'
+    const rawSearch = req.query.search ?? req.query.q ?? '';
+    const search = String(rawSearch).trim();
+    
+    if (!search) {
+      return next(new AppError('Missing search query. Provide ?search= (or legacy ?q=).', 400));
+    }
+    
+    // idFiliale: optional integer
+    const idFiliale = req.query.idFiliale ? Number(req.query.idFiliale) : null;
+    if (req.query.idFiliale && Number.isNaN(idFiliale)) {
+      return next(new AppError('Invalid idFiliale. Must be an integer.', 400));
+    }
+    
+    // onlyActive: parse using your helper (keeps previous behavior)
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // default true
+    
+    // Pagination parameters
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await marqueService.searchMarques(search, idFiliale, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Search completed successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-
-  // idFiliale: optional integer
-  const idFiliale = req.query.idFiliale ? Number(req.query.idFiliale) : null;
-  if (req.query.idFiliale && Number.isNaN(idFiliale)) {
-    return res.status(400).json({ error: 'Invalid idFiliale. Must be an integer.' });
-  }
-
-  // onlyActive: parse using your helper (keeps previous behavior)
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // default true
-  
-  // Pagination parameters
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await marqueService.searchMarques(search, idFiliale, onlyActive, page, pageSize);
-  res.json(result);
-});
-
+};
 
 /**
  * @openapi
@@ -273,23 +284,21 @@ export const searchMarques = asyncHandler(async (req, res) => {
  *       404:
  *         description: Marque not found
  */
-export const updateMarque = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name = null, idFiliale = null, active = null } = req.body || {};
-
+export const updateMarque = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name = null, idFiliale = null, active = null } = req.body || {};
     const result = await marqueService.updateMarque(id, name, idFiliale, active);
     
     if (!result) {
-      return res.status(404).json({ error: 'Marque not found' });
+      return next(new AppError('Marque not found', 404));
     }
     
-    res.json({ data: result });
+    sendSuccess(res, result, 'Marque updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -309,22 +318,20 @@ export const updateMarque = asyncHandler(async (req, res) => {
  *       404:
  *         description: Marque not found
  */
-export const activateMarque = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const activateMarque = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await marqueService.activateMarque(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'Marque not found' });
+      return next(new AppError('Marque not found', 404));
     }
     
-    res.json({ data: result });
+    sendSuccess(res, result, 'Marque activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -344,19 +351,17 @@ export const activateMarque = asyncHandler(async (req, res) => {
  *       404:
  *         description: Marque not found
  */
-export const deactivateMarque = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const deactivateMarque = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await marqueService.deactivateMarque(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'Marque not found' });
+      return next(new AppError('Marque not found', 404));
     }
     
-    res.json({ data: result });
+    sendSuccess(res, result, 'Marque deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};

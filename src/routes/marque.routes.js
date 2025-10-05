@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
+import { errorHandler } from '../middlewares/responseHandler.js';
 
 // Import validation middleware
 import {
@@ -29,44 +30,44 @@ const router = express.Router();
 router.use(isAuth);
 
 // Create marque
-router.post('/', 
+router.post('/',
   canCreateMarque,
   validateMarqueCreate,
   marqueController.createMarque
 );
 
-// Get marque by ID  
-router.get('/:id', 
-  validateMarqueId,
-  canReadMarque,
-  marqueController.getMarqueById
-);
-
-// List all marques
-router.get('/', 
-  canReadMarque,
-  validateMarqueQuery,
-  marqueController.listMarques
-);
-
-// Search marques
-router.get('/search', 
+// Search marques (must be before /:id to avoid route conflicts)
+router.get('/search',
   canReadMarque,
   validateMarqueSearch,
   validateMarqueQuery,
   marqueController.searchMarques
 );
 
-// List marques by filiale
-router.get('/by-filiale/:idFiliale', 
+// List marques by filiale (must be before /:id to avoid route conflicts)
+router.get('/by-filiale/:idFiliale',
   validateFilialeId,
   canReadMarque,
   validateMarqueQuery,
   marqueController.listMarquesByFiliale
 );
 
+// Get marque by ID
+router.get('/:id',
+  validateMarqueId,
+  canReadMarque,
+  marqueController.getMarqueById
+);
+
+// List all marques
+router.get('/',
+  canReadMarque,
+  validateMarqueQuery,
+  marqueController.listMarques
+);
+
 // Update marque
-router.patch('/:id', 
+router.patch('/:id',
   validateMarqueId,
   canUpdateMarque,
   validateMarqueUpdate,
@@ -74,17 +75,20 @@ router.patch('/:id',
 );
 
 // Activate marque
-router.post('/:id/activate', 
+router.post('/:id/activate',
   validateMarqueId,
   canUpdateMarque,
   marqueController.activateMarque
 );
 
 // Deactivate marque
-router.post('/:id/deactivate', 
+router.post('/:id/deactivate',
   validateMarqueId,
   canUpdateMarque,
   marqueController.deactivateMarque
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
