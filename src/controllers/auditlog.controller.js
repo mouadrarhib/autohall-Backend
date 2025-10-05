@@ -1,7 +1,6 @@
 // src/controllers/auditlog.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import { parseInteger } from '../helpers/queryHelpers.js';
 import * as auditlogService from '../services/auditlog.service.js';
 
@@ -45,12 +44,15 @@ import * as auditlogService from '../services/auditlog.service.js';
  *       200:
  *         description: Daily counts
  */
-export const countByDay = asyncHandler(async (req, res) => {
-  const { fromUtc, toUtc, module = null, action = null } = req.query;
-  
-  const data = await auditlogService.countByDay(fromUtc, toUtc, module, action);
-  res.json({ data });
-});
+export const countByDay = async (req, res, next) => {
+  try {
+    const { fromUtc, toUtc, module = null, action = null } = req.query;
+    const data = await auditlogService.countByDay(fromUtc, toUtc, module, action);
+    sendSuccess(res, data, 'Daily counts retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -85,12 +87,15 @@ export const countByDay = asyncHandler(async (req, res) => {
  *       200:
  *         description: Hourly counts
  */
-export const countByHour = asyncHandler(async (req, res) => {
-  const { fromUtc, toUtc, module = null, action = null } = req.query;
-  
-  const data = await auditlogService.countByHour(fromUtc, toUtc, module, action);
-  res.json({ data });
-});
+export const countByHour = async (req, res, next) => {
+  try {
+    const { fromUtc, toUtc, module = null, action = null } = req.query;
+    const data = await auditlogService.countByHour(fromUtc, toUtc, module, action);
+    sendSuccess(res, data, 'Hourly counts retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -126,14 +131,18 @@ export const countByHour = asyncHandler(async (req, res) => {
  *       200:
  *         description: Export data with pagination
  */
-export const exportWindow = asyncHandler(async (req, res) => {
-  const { fromUtc, toUtc } = req.query;
-  const lastId = parseInteger(req.query.lastId) || 0;
-  const batchSize = Math.min(parseInteger(req.query.batchSize) || 50000, 100000);
-  
-  const result = await auditlogService.exportWindow(fromUtc, toUtc, lastId, batchSize);
-  res.json(result);
-});
+export const exportWindow = async (req, res, next) => {
+  try {
+    const { fromUtc, toUtc } = req.query;
+    const lastId = parseInteger(req.query.lastId) || 0;
+    const batchSize = Math.min(parseInteger(req.query.batchSize) || 50000, 100000);
+    
+    const result = await auditlogService.exportWindow(fromUtc, toUtc, lastId, batchSize);
+    sendSuccess(res, result, 'Export data retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -153,16 +162,20 @@ export const exportWindow = asyncHandler(async (req, res) => {
  *       404:
  *         description: Audit log not found
  */
-export const getById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const auditlog = await auditlogService.getAuditLogById(id);
-  
-  if (!auditlog) {
-    return res.status(404).json({ error: 'Audit log not found' });
+export const getById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const auditlog = await auditlogService.getAuditLogById(id);
+    
+    if (!auditlog) {
+      return next(new AppError('Audit log not found', 404));
+    }
+    
+    sendSuccess(res, auditlog, 'Audit log retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  res.json({ data: auditlog });
-});
+};
 
 /**
  * @openapi
@@ -174,10 +187,14 @@ export const getById = asyncHandler(async (req, res) => {
  *       200:
  *         description: Latest logs per module
  */
-export const latestPerModule = asyncHandler(async (req, res) => {
-  const data = await auditlogService.getLatestPerModule();
-  res.json({ data });
-});
+export const latestPerModule = async (req, res, next) => {
+  try {
+    const data = await auditlogService.getLatestPerModule();
+    sendSuccess(res, data, 'Latest logs per module retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -208,14 +225,18 @@ export const latestPerModule = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of action names
  */
-export const listActions = asyncHandler(async (req, res) => {
-  const module = req.query.module || null;
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await auditlogService.listActions(module, page, pageSize);
-  res.json(result);
-});
+export const listActions = async (req, res, next) => {
+  try {
+    const module = req.query.module || null;
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await auditlogService.listActions(module, page, pageSize);
+    sendSuccess(res, result, 'Actions list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -240,13 +261,17 @@ export const listActions = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of module names
  */
-export const listModules = asyncHandler(async (req, res) => {
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await auditlogService.listModules(page, pageSize);
-  res.json(result);
-});
+export const listModules = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await auditlogService.listModules(page, pageSize);
+    sendSuccess(res, result, 'Modules list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -283,15 +308,19 @@ export const listModules = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of user IDs
  */
-export const listUsers = asyncHandler(async (req, res) => {
-  const module = req.query.module || null;
-  const action = req.query.action || null;
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await auditlogService.listUsers(module, action, page, pageSize);
-  res.json(result);
-});
+export const listUsers = async (req, res, next) => {
+  try {
+    const module = req.query.module || null;
+    const action = req.query.action || null;
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await auditlogService.listUsers(module, action, page, pageSize);
+    sendSuccess(res, result, 'Users list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -318,19 +347,18 @@ export const listUsers = asyncHandler(async (req, res) => {
  *       200:
  *         description: Purge result
  */
-export const purgeRolling = asyncHandler(async (req, res) => {
-  const retainDays = parseInteger(req.body?.retainDays) || 90;
-  const module = req.body?.module || null;
-  const action = req.body?.action || null;
-
+export const purgeRolling = async (req, res, next) => {
   try {
+    const retainDays = parseInteger(req.body?.retainDays) || 90;
+    const module = req.body?.module || null;
+    const action = req.body?.action || null;
+    
     const data = await auditlogService.purgeRolling(retainDays, module, action);
-    res.json({ data });
+    sendSuccess(res, data, 'Audit logs purged successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -366,14 +394,18 @@ export const purgeRolling = asyncHandler(async (req, res) => {
  *       200:
  *         description: Top actions
  */
-export const topActions = asyncHandler(async (req, res) => {
-  const { fromUtc, toUtc } = req.query;
-  const topN = Math.min(parseInteger(req.query.topN) || 10, 1000);
-  const module = req.query.module || null;
-  
-  const data = await auditlogService.getTopActions(fromUtc, toUtc, topN, module);
-  res.json({ data });
-});
+export const topActions = async (req, res, next) => {
+  try {
+    const { fromUtc, toUtc } = req.query;
+    const topN = Math.min(parseInteger(req.query.topN) || 10, 1000);
+    const module = req.query.module || null;
+    
+    const data = await auditlogService.getTopActions(fromUtc, toUtc, topN, module);
+    sendSuccess(res, data, 'Top actions retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -414,15 +446,19 @@ export const topActions = asyncHandler(async (req, res) => {
  *       200:
  *         description: Top users
  */
-export const topUsers = asyncHandler(async (req, res) => {
-  const { fromUtc, toUtc } = req.query;
-  const topN = Math.min(parseInteger(req.query.topN) || 10, 1000);
-  const module = req.query.module || null;
-  const action = req.query.action || null;
-  
-  const data = await auditlogService.getTopUsers(fromUtc, toUtc, topN, module, action);
-  res.json({ data });
-});
+export const topUsers = async (req, res, next) => {
+  try {
+    const { fromUtc, toUtc } = req.query;
+    const topN = Math.min(parseInteger(req.query.topN) || 10, 1000);
+    const module = req.query.module || null;
+    const action = req.query.action || null;
+    
+    const data = await auditlogService.getTopUsers(fromUtc, toUtc, topN, module, action);
+    sendSuccess(res, data, 'Top users retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -463,17 +499,21 @@ export const topUsers = asyncHandler(async (req, res) => {
  *       201:
  *         description: Audit log created
  */
-export const write = asyncHandler(async (req, res) => {
-  const logData = {
-    ...req.body,
-    userId: req.body.userId || req.user?.id || null,
-    ip: req.ip || '0.0.0.0',
-    scope: req.body.scope || 'api'
-  };
-
-  const data = await auditlogService.writeAuditLog(logData);
-  res.status(201).json({ data });
-});
+export const write = async (req, res, next) => {
+  try {
+    const logData = {
+      ...req.body,
+      userId: req.body.userId || req.user?.id || null,
+      ip: req.ip || '0.0.0.0',
+      scope: req.body.scope || 'api'
+    };
+    
+    const data = await auditlogService.writeAuditLog(logData);
+    sendSuccess(res, data, 'Audit log created successfully', 201);
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -511,15 +551,18 @@ export const write = asyncHandler(async (req, res) => {
  *       201:
  *         description: Audit log created
  */
-export const writeFromSession = asyncHandler(async (req, res) => {
-  const logData = {
-    ...req.body,
-    ip: req.ip || '0.0.0.0',
-    scope: req.body.scope || 'api'
-  };
-  
-  const userId = req.user?.id || 'anonymous';
-  const data = await auditlogService.writeAuditLogFromSession(logData, userId);
-  
-  res.status(201).json({ data });
-});
+export const writeFromSession = async (req, res, next) => {
+  try {
+    const logData = {
+      ...req.body,
+      ip: req.ip || '0.0.0.0',
+      scope: req.body.scope || 'api'
+    };
+    
+    const userId = req.user?.id || 'anonymous';
+    const data = await auditlogService.writeAuditLogFromSession(logData, userId);
+    sendSuccess(res, data, 'Audit log created successfully', 201);
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};

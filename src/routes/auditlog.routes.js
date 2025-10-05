@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
+import { errorHandler } from '../middlewares/responseHandler.js';
 
 // Import validation middleware
 import {
@@ -31,28 +32,28 @@ const router = express.Router();
 router.use(isAuth);
 
 // Analytics routes
-router.get('/count-by-day', 
+router.get('/count-by-day',
   canAnalyzeAuditLog,
   validateTimeWindow,
   validateAuditLogQuery,
   auditlogController.countByDay
 );
 
-router.get('/count-by-hour', 
+router.get('/count-by-hour',
   canAnalyzeAuditLog,
   validateTimeWindow,
   validateAuditLogQuery,
   auditlogController.countByHour
 );
 
-router.get('/top-actions', 
+router.get('/top-actions',
   canAnalyzeAuditLog,
   validateTimeWindow,
   validateAuditLogQuery,
   auditlogController.topActions
 );
 
-router.get('/top-users', 
+router.get('/top-users',
   canAnalyzeAuditLog,
   validateTimeWindow,
   validateAuditLogQuery,
@@ -60,60 +61,63 @@ router.get('/top-users',
 );
 
 // Export route
-router.get('/export', 
+router.get('/export',
   canExportAuditLog,
   validateExportWindow,
   auditlogController.exportWindow
 );
 
 // Get audit log by ID
-router.get('/:id', 
+router.get('/:id',
   validateAuditLogId,
   canReadAuditLog,
   auditlogController.getById
 );
 
 // List routes
-router.get('/latest-per-module', 
+router.get('/latest-per-module',
   canReadAuditLog,
   auditlogController.latestPerModule
 );
 
-router.get('/actions', 
+router.get('/actions',
   canReadAuditLog,
   validateAuditLogQuery,
   auditlogController.listActions
 );
 
-router.get('/modules', 
+router.get('/modules',
   canReadAuditLog,
   auditlogController.listModules
 );
 
-router.get('/users', 
+router.get('/users',
   canReadAuditLog,
   validateAuditLogQuery,
   auditlogController.listUsers
 );
 
 // Write routes
-router.post('/write', 
+router.post('/write',
   canWriteAuditLog,
   validateWriteAuditLog,
   auditlogController.write
 );
 
-router.post('/write-from-session', 
+router.post('/write-from-session',
   canWriteAuditLog,
   validateWriteAuditLog,
   auditlogController.writeFromSession
 );
 
 // Purge route
-router.post('/purge-rolling', 
+router.post('/purge-rolling',
   canPurgeAuditLog,
   validatePurgeRolling,
   auditlogController.purgeRolling
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
