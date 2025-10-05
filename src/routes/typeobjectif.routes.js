@@ -2,19 +2,17 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
-
+import { errorHandler } from '../middlewares/responseHandler.js';
 import {
   validateTypeObjectifCreate,
   validateTypeObjectifUpdate,
   validateTypeObjectifId
 } from '../middlewares/typeobjectif/validateInput.js';
-
 import {
   canCreateTypeObjectif,
   canReadTypeObjectif,
   canUpdateTypeObjectif
 } from '../middlewares/typeobjectif/hasPermission.js';
-
 import * as controller from '../controllers/typeobjectif.controller.js';
 
 const router = express.Router();
@@ -68,5 +66,8 @@ router.post(
   canUpdateTypeObjectif,
   controller.deactivateTypeObjectif
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
