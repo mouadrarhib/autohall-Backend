@@ -2,19 +2,17 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
-
+import { errorHandler } from '../middlewares/responseHandler.js';
 import {
   validateTypeVenteCreate,
   validateTypeVenteUpdate,
   validateTypeVenteId
 } from '../middlewares/typevente/validateInput.js';
-
 import {
   canCreateTypeVente,
   canReadTypeVente,
   canUpdateTypeVente
 } from '../middlewares/typevente/hasPermission.js';
-
 import * as controller from '../controllers/typevente.controller.js';
 
 const router = express.Router();
@@ -68,5 +66,8 @@ router.post(
   canUpdateTypeVente,
   controller.deactivateTypeVente
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
