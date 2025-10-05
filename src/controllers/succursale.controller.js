@@ -87,7 +87,7 @@ export const getSuccursaleById = asyncHandler(async (req, res) => {
  * @openapi
  * /api/succursales:
  *   get:
- *     summary: List succursales
+ *     summary: List succursales with pagination
  *     tags: [Succursales]
  *     parameters:
  *       - in: query
@@ -95,15 +95,27 @@ export const getSuccursaleById = asyncHandler(async (req, res) => {
  *         schema:
  *           type: boolean
  *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: List of succursales
+ *         description: Paginated list of succursales
  */
 export const listSuccursales = asyncHandler(async (req, res) => {
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
   
-  const succursales = await succursaleService.listSuccursales(onlyActive);
-  res.json({ data: succursales });
+  const result = await succursaleService.listSuccursales(onlyActive, page, pageSize);
+  res.json(result);
 });
 
 /**

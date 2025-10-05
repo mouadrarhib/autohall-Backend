@@ -181,21 +181,25 @@ export const SQL = {
   },
 
   SUCCURSALE: {
-    SUCCURSALE_CREATE: `
-      DECLARE @NewId INT;
-      EXEC dbo.sp_Succursale_Create
-        @Name=:name,
-        @Active=:active,
-        @NewSuccursaleId=@NewId OUTPUT;
-      SELECT id=@NewId;
-    `,
-    SUCCURSALE_GET_BY_ID: 'EXEC dbo.sp_Succursale_GetById @Id=:id',
-    SUCCURSALE_LIST: 'EXEC dbo.sp_Succursale_List @OnlyActive=:onlyActive',
-    SUCCURSALE_SEARCH: 'EXEC dbo.sp_Succursale_Search @q=:q, @OnlyActive=:onlyActive',
-    SUCCURSALE_UPDATE: 'EXEC dbo.sp_Succursale_Update @Id=:id, @Name=:name, @Active=:active',
-    SUCCURSALE_ACTIVATE: 'EXEC dbo.sp_Succursale_Activate @Id=:id',
-    SUCCURSALE_DEACTIVATE: 'EXEC dbo.sp_Succursale_Deactivate @Id=:id',
+  SUCCURSALE_CREATE: `
+    DECLARE @NewId INT;
+    EXEC dbo.sp_Succursale_Create
+      @Name=:name,
+      @Active=:active,
+      @NewSuccursaleId=@NewId OUTPUT;
+    SELECT id=@NewId;
+  `,
+  SUCCURSALE_GET_BY_ID: 'EXEC dbo.sp_Succursale_GetById @Id=:id',
+  
+  // Updated with pagination
+  SUCCURSALE_LIST: 'EXEC dbo.sp_Succursale_List @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  
+  SUCCURSALE_SEARCH: 'EXEC dbo.sp_Succursale_Search @q=:q, @OnlyActive=:onlyActive',
+  SUCCURSALE_UPDATE: 'EXEC dbo.sp_Succursale_Update @Id=:id, @Name=:name, @Active=:active',
+  SUCCURSALE_ACTIVATE: 'EXEC dbo.sp_Succursale_Activate @Id=:id',
+  SUCCURSALE_DEACTIVATE: 'EXEC dbo.sp_Succursale_Deactivate @Id=:id',
   },
+
 
   GROUPEMENT: {
     GROUPEMENT_CREATE: 'EXEC dbo.sp_InsertGroupement @name=:name, @active=:active',
