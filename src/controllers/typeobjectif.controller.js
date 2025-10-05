@@ -1,7 +1,6 @@
 // src/controllers/typeobjectif.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as typeObjectifService from '../services/typeobjectif.service.js';
 
 /**
@@ -41,16 +40,15 @@ import * as typeObjectifService from '../services/typeobjectif.service.js';
  *       403:
  *         description: Forbidden
  */
-export const createTypeObjectif = asyncHandler(async (req, res) => {
-  const { name } = req.body || {};
+export const createTypeObjectif = async (req, res, next) => {
   try {
+    const { name } = req.body || {};
     const result = await typeObjectifService.createTypeObjectif(name);
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'TypeObjectif created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -75,12 +73,20 @@ export const createTypeObjectif = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const getTypeObjectifById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const row = await typeObjectifService.getActiveTypeObjectifById(id);
-  if (!row) return res.status(404).json({ error: 'TypeObjectif not found' });
-  res.json({ data: row });
-});
+export const getTypeObjectifById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const row = await typeObjectifService.getActiveTypeObjectifById(id);
+    
+    if (!row) {
+      return next(new AppError('TypeObjectif not found', 404));
+    }
+    
+    sendSuccess(res, row, 'TypeObjectif retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -98,10 +104,14 @@ export const getTypeObjectifById = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const listActiveTypeObjectifs = asyncHandler(async (_req, res) => {
-  const rows = await typeObjectifService.listActiveTypeObjectifs();
-  res.json({ data: rows });
-});
+export const listActiveTypeObjectifs = async (_req, res, next) => {
+  try {
+    const rows = await typeObjectifService.listActiveTypeObjectifs();
+    sendSuccess(res, rows, 'Active TypeObjectifs retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -137,18 +147,21 @@ export const listActiveTypeObjectifs = asyncHandler(async (_req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const updateTypeObjectif = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name } = req.body || {};
+export const updateTypeObjectif = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name } = req.body || {};
     const result = await typeObjectifService.updateTypeObjectif(id, name);
-    if (!result) return res.status(404).json({ error: 'TypeObjectif not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypeObjectif not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypeObjectif updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -173,17 +186,20 @@ export const updateTypeObjectif = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const activateTypeObjectif = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const activateTypeObjectif = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await typeObjectifService.activateTypeObjectif(id);
-    if (!result) return res.status(404).json({ error: 'TypeObjectif not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypeObjectif not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypeObjectif activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -208,14 +224,17 @@ export const activateTypeObjectif = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const deactivateTypeObjectif = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const deactivateTypeObjectif = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await typeObjectifService.deactivateTypeObjectif(id);
-    if (!result) return res.status(404).json({ error: 'TypeObjectif not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypeObjectif not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypeObjectif deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
