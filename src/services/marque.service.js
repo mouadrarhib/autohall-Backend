@@ -4,7 +4,11 @@ import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { QueryTypes } from 'sequelize';
 import { sanitizeSearchQuery } from '../helpers/queryHelpers.js';
-import { getFirstResult, prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { 
+  getFirstResult, 
+  prepareStoredProcParams 
+} from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 /**
  * Create a new marque
@@ -18,20 +22,17 @@ export async function createMarque(name, idFiliale, active = true) {
     idFiliale: Number(idFiliale),
     active: active ? 1 : 0
   });
-
   try {
     const result = await sequelize.query(SQL.MARQUE.MARQUE_CREATE, {
       replacements: params,
       type: QueryTypes.SELECT
     });
-
     // sp_Marque_Create SELECTs { id: NewId }
     const idRow = Array.isArray(result) ? result.find(r => typeof r?.id !== 'undefined') : null;
     const newId = idRow?.id;
     if (!newId) {
       throw new Error('Create operation did not return new ID');
     }
-
     const createdMarque = await getMarqueById(newId);
     return createdMarque || {
       id: Number(newId),
@@ -57,57 +58,86 @@ export async function getMarqueById(id) {
 }
 
 /**
- * List marques with optional filters
+ * List marques with optional filters and pagination
  */
-export async function listMarques(idFiliale = null, onlyActive = true) {
+export async function listMarques(idFiliale = null, onlyActive = true, page = 1, pageSize = 10) {
   const params = prepareStoredProcParams({
     idFiliale: idFiliale ? Number(idFiliale) : null,
-    onlyActive: onlyActive ? 1 : 0
+    onlyActive: onlyActive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-
-  const rows = await sequelize.query(SQL.MARQUE.MARQUE_LIST, {
-    replacements: params,
-    type: QueryTypes.SELECT
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.MARQUE.MARQUE_LIST, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listMarques service:', error);
+    throw error;
+  }
 }
 
 /**
- * List marques by filiale
+ * List marques by filiale with pagination
  */
-export async function listMarquesByFiliale(idFiliale, onlyActive = true) {
+export async function listMarquesByFiliale(idFiliale, onlyActive = true, page = 1, pageSize = 10) {
   const params = prepareStoredProcParams({
     idFiliale: Number(idFiliale),
-    onlyActive: onlyActive ? 1 : 0
+    onlyActive: onlyActive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-
-  const rows = await sequelize.query(SQL.MARQUE.MARQUE_LIST_BY_FILIALE, {
-    replacements: params,
-    type: QueryTypes.SELECT
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.MARQUE.MARQUE_LIST_BY_FILIALE, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listMarquesByFiliale service:', error);
+    throw error;
+  }
 }
 
 /**
- * Search marques
+ * Search marques with pagination
  */
-export async function searchMarques(searchTerm, idFiliale = null, onlyActive = true) {
+export async function searchMarques(searchTerm, idFiliale = null, onlyActive = true, page = 1, pageSize = 10) {
   const sanitizedSearch = sanitizeSearchQuery(searchTerm);
   if (!sanitizedSearch) {
-    return [];
+    return {
+      data: [],
+      pagination: {
+        page: Number(page),
+        pageSize: Number(pageSize),
+        totalRecords: 0,
+        totalPages: 0
+      }
+    };
   }
-
+  
   const params = prepareStoredProcParams({
     q: sanitizedSearch,
     idFiliale: idFiliale ? Number(idFiliale) : null,
-    onlyActive: onlyActive ? 1 : 0
+    onlyActive: onlyActive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-
-  const rows = await sequelize.query(SQL.MARQUE.MARQUE_SEARCH, {
-    replacements: params,
-    type: QueryTypes.SELECT
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.MARQUE.MARQUE_SEARCH, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in searchMarques service:', error);
+    throw error;
+  }
 }
 
 /**
@@ -120,7 +150,6 @@ export async function updateMarque(id, name = null, idFiliale = null, active = n
     idFiliale: idFiliale !== null ? Number(idFiliale) : null,
     active: active === null ? null : (active ? 1 : 0)
   });
-
   try {
     const rows = await sequelize.query(SQL.MARQUE.MARQUE_UPDATE, {
       replacements: params,

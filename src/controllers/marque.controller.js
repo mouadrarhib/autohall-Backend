@@ -90,7 +90,7 @@ export const getMarqueById = asyncHandler(async (req, res) => {
  * @openapi
  * /api/marques:
  *   get:
- *     summary: List marques
+ *     summary: List marques with pagination
  *     tags: [Marques]
  *     parameters:
  *       - in: query
@@ -103,23 +103,35 @@ export const getMarqueById = asyncHandler(async (req, res) => {
  *         schema:
  *           type: boolean
  *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: List of marques
+ *         description: Paginated list of marques
  */
 export const listMarques = asyncHandler(async (req, res) => {
   const { idFiliale } = req.query;
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
   
-  const marques = await marqueService.listMarques(idFiliale, onlyActive);
-  res.json({ data: marques });
+  const result = await marqueService.listMarques(idFiliale, onlyActive, page, pageSize);
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/marques/by-filiale/{idFiliale}:
  *   get:
- *     summary: List marques by filiale
+ *     summary: List marques by filiale with pagination
  *     tags: [Marques]
  *     parameters:
  *       - in: path
@@ -132,23 +144,35 @@ export const listMarques = asyncHandler(async (req, res) => {
  *         schema:
  *           type: boolean
  *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: List of marques for the filiale
+ *         description: Paginated list of marques for the filiale
  */
 export const listMarquesByFiliale = asyncHandler(async (req, res) => {
   const idFiliale = Number(req.params.idFiliale);
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
   
-  const marques = await marqueService.listMarquesByFiliale(idFiliale, onlyActive);
-  res.json({ data: marques });
+  const result = await marqueService.listMarquesByFiliale(idFiliale, onlyActive, page, pageSize);
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/marques/search:
  *   get:
- *     summary: Search marques
+ *     summary: Search marques with pagination
  *     tags: [Marques]
  *     parameters:
  *       - in: query
@@ -156,45 +180,47 @@ export const listMarquesByFiliale = asyncHandler(async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: |
- *           Search term (preferred).
- *           Example: toyota
+ *         description: Search term (preferred)
  *       - in: query
  *         name: q
  *         required: false
  *         schema:
  *           type: string
  *         deprecated: true
- *         description: |
- *           Legacy short query parameter. Use parameter named "search" instead.
- *           If both are provided, the "search" parameter takes precedence.
+ *         description: Legacy short query parameter
  *       - in: query
  *         name: idFiliale
  *         schema:
  *           type: integer
  *           nullable: true
- *         description: Optional filiale ID to filter results.
  *       - in: query
  *         name: onlyActive
  *         schema:
  *           type: boolean
  *           default: true
- *         description: If true, return only active marques.
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: Search results
+ *         description: Paginated search results
  *       400:
  *         description: Invalid or missing search query
  */
-
 export const searchMarques = asyncHandler(async (req, res) => {
   // Prefer the explicit 'search' param; fall back to legacy 'q'
   const rawSearch = req.query.search ?? req.query.q ?? '';
   const search = String(rawSearch).trim();
-
   if (!search) {
     return res.status(400).json({
-      error: 'Missing search query. Provide ?search=<term> (or legacy ?q=<term>).'
+      error: 'Missing search query. Provide ?search= (or legacy ?q=).'
     });
   }
 
@@ -206,9 +232,13 @@ export const searchMarques = asyncHandler(async (req, res) => {
 
   // onlyActive: parse using your helper (keeps previous behavior)
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // default true
-
-  const results = await marqueService.searchMarques(search, idFiliale, onlyActive);
-  res.json({ data: results });
+  
+  // Pagination parameters
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await marqueService.searchMarques(search, idFiliale, onlyActive, page, pageSize);
+  res.json(result);
 });
 
 
