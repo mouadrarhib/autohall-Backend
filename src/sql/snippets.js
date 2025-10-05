@@ -67,32 +67,33 @@ export const SQL = {
     ROLE_SEARCH: 'EXEC dbo.sp_SearchRoleByName @name=:name',
   },
 
-  MARQUE: {
-  MARQUE_CREATE: `
+  MODELE: {
+  MODELE_CREATE: `
     DECLARE @NewId INT;
-    EXEC dbo.sp_Marque_Create
+    EXEC dbo.sp_Modele_Create
       @Name=:name,
-      @IdFiliale=:idFiliale,
+      @IdMarque=:idMarque,
       @Active=:active,
-      @NewMarqueId=@NewId OUTPUT;
+      @NewModeleId=@NewId OUTPUT;
     SELECT id=@NewId;
   `,
-  MARQUE_GET_BY_ID: 'EXEC dbo.sp_Marque_GetById @Id=:id',
+  MODELE_GET_BY_ID: 'EXEC dbo.sp_Modele_GetById @Id=:id',
   
   // Updated with pagination
-  MARQUE_LIST: 'EXEC dbo.sp_Marque_List @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MODELE_LIST: 'EXEC dbo.sp_Modele_List @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
   
   // Updated with pagination
-  MARQUE_LIST_BY_FILIALE: 'EXEC dbo.sp_Marque_ListByFiliale @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MODELE_LIST_BY_MARQUE: 'EXEC dbo.sp_Modele_ListByMarque @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
   
   // Updated with pagination
-  MARQUE_SEARCH: 'EXEC dbo.sp_Marque_Search @q=:q, @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MODELE_SEARCH: 'EXEC dbo.sp_Modele_Search @q=:q, @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
   
-  MARQUE_UPDATE: 'EXEC dbo.sp_Marque_Update @Id=:id, @Name=:name, @IdFiliale=:idFiliale, @Active=:active',
-  MARQUE_ACTIVATE: 'EXEC dbo.sp_Marque_Activate @Id=:id',
-  MARQUE_DEACTIVATE: 'EXEC dbo.sp_Marque_Deactivate @Id=:id',
-  MARQUE_DELETE: 'EXEC dbo.sp_Marque_Delete @Id=:id',
+  MODELE_UPDATE: 'EXEC dbo.sp_Modele_Update @Id=:id, @Name=:name, @IdMarque=:idMarque, @Active=:active',
+  MODELE_ACTIVATE: 'EXEC dbo.sp_Modele_Activate @Id=:id',
+  MODELE_DEACTIVATE: 'EXEC dbo.sp_Modele_Deactivate @Id=:id',
+  MODELE_DELETE: 'EXEC dbo.sp_Modele_Delete @Id=:id',
   },
+
 
 
   FILIALE: {

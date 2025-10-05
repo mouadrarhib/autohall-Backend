@@ -91,7 +91,7 @@ export const getModeleById = asyncHandler(async (req, res) => {
  * @openapi
  * /api/modeles:
  *   get:
- *     summary: List modeles
+ *     summary: List modeles with pagination
  *     tags: [Modeles]
  *     parameters:
  *       - in: query
@@ -104,23 +104,35 @@ export const getModeleById = asyncHandler(async (req, res) => {
  *         schema:
  *           type: boolean
  *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: List of modeles
+ *         description: Paginated list of modeles
  */
 export const listModeles = asyncHandler(async (req, res) => {
   const { idMarque } = req.query;
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
   
-  const modeles = await modeleService.listModeles(idMarque, onlyActive);
-  res.json({ data: modeles });
+  const result = await modeleService.listModeles(idMarque, onlyActive, page, pageSize);
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/modeles/by-marque/{idMarque}:
  *   get:
- *     summary: List modeles by marque
+ *     summary: List modeles by marque with pagination
  *     tags: [Modeles]
  *     parameters:
  *       - in: path
@@ -133,23 +145,35 @@ export const listModeles = asyncHandler(async (req, res) => {
  *         schema:
  *           type: boolean
  *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: List of modeles for the marque
+ *         description: Paginated list of modeles for the marque
  */
 export const listModelesByMarque = asyncHandler(async (req, res) => {
   const idMarque = Number(req.params.idMarque);
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
   
-  const modeles = await modeleService.listModelesByMarque(idMarque, onlyActive);
-  res.json({ data: modeles });
+  const result = await modeleService.listModelesByMarque(idMarque, onlyActive, page, pageSize);
+  res.json(result);
 });
 
 /**
  * @openapi
  * /api/modeles/search:
  *   get:
- *     summary: Search modeles
+ *     summary: Search modeles with pagination
  *     tags: [Modeles]
  *     parameters:
  *       - in: query
@@ -168,18 +192,30 @@ export const listModelesByMarque = asyncHandler(async (req, res) => {
  *         schema:
  *           type: boolean
  *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: Search results
+ *         description: Paginated search results
  *       400:
  *         description: Invalid search query
  */
 export const searchModeles = asyncHandler(async (req, res) => {
   const { q, idMarque } = req.query;
   const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
   
-  const results = await modeleService.searchModeles(q, idMarque, onlyActive);
-  res.json({ data: results });
+  const result = await modeleService.searchModeles(q, idMarque, onlyActive, page, pageSize);
+  res.json(result);
 });
 
 /**
