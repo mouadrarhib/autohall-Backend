@@ -1,7 +1,6 @@
 // src/controllers/version.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as versionService from '../services/version.service.js';
 
 /**
@@ -62,15 +61,14 @@ import * as versionService from '../services/version.service.js';
  *       403:
  *         description: Forbidden
  */
-export const createVersion = asyncHandler(async (req, res) => {
+export const createVersion = async (req, res, next) => {
   try {
     const result = await versionService.createVersion(req.body);
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Version created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -122,17 +120,20 @@ export const createVersion = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const updateVersion = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const updateVersion = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await versionService.updateVersion(id, req.body);
-    if (!result) return res.status(404).json({ error: 'Version not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Version not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Version updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -157,12 +158,20 @@ export const updateVersion = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const getVersionById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const row = await versionService.getVersionById(id);
-  if (!row) return res.status(404).json({ error: 'Version not found' });
-  res.json({ data: row });
-});
+export const getVersionById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const row = await versionService.getVersionById(id);
+    
+    if (!row) {
+      return next(new AppError('Version not found', 404));
+    }
+    
+    sendSuccess(res, row, 'Version retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -217,23 +226,24 @@ export const getVersionById = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const listVersions = asyncHandler(async (req, res) => {
-  const { idModele, onlyActive } = req.query;
-  
-  // Parse pagination parameters
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  // Call service with pagination
-  const result = await versionService.listVersions(
-    idModele, 
-    onlyActive !== 'false', 
-    page, 
-    pageSize
-  );
-  
-  res.json(result);
-});
+export const listVersions = async (req, res, next) => {
+  try {
+    const { idModele, onlyActive } = req.query;
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await versionService.listVersions(
+      idModele,
+      onlyActive !== 'false',
+      page,
+      pageSize
+    );
+    
+    sendSuccess(res, result, 'Versions list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -267,23 +277,24 @@ export const listVersions = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const listVersionsByModele = asyncHandler(async (req, res) => {
-  const { idModele, onlyActive } = req.query;
-  
-  // Parse pagination parameters
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  // Call service with pagination
-  const result = await versionService.listVersionsByModele(
-    idModele, 
-    onlyActive !== 'false', 
-    page, 
-    pageSize
-  );
-  
-  res.json(result);
-});
+export const listVersionsByModele = async (req, res, next) => {
+  try {
+    const { idModele, onlyActive } = req.query;
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await versionService.listVersionsByModele(
+      idModele,
+      onlyActive !== 'false',
+      page,
+      pageSize
+    );
+    
+    sendSuccess(res, result, 'Versions by modele retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -313,11 +324,15 @@ export const listVersionsByModele = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const searchVersions = asyncHandler(async (req, res) => {
-  const { q, idModele, onlyActive } = req.query;
-  const rows = await versionService.searchVersions(q || '', idModele, onlyActive !== 'false');
-  res.json({ data: rows });
-});
+export const searchVersions = async (req, res, next) => {
+  try {
+    const { q, idModele, onlyActive } = req.query;
+    const rows = await versionService.searchVersions(q || '', idModele, onlyActive !== 'false');
+    sendSuccess(res, rows, 'Search completed successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -342,17 +357,20 @@ export const searchVersions = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const activateVersion = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const activateVersion = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await versionService.activateVersion(id);
-    if (!result) return res.status(404).json({ error: 'Version not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Version not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Version activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -377,14 +395,17 @@ export const activateVersion = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const deactivateVersion = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const deactivateVersion = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await versionService.deactivateVersion(id);
-    if (!result) return res.status(404).json({ error: 'Version not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Version not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Version deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
