@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
+import { errorHandler } from '../middlewares/responseHandler.js';
 
 // Import validation middleware
 import {
@@ -15,7 +16,7 @@ import {
 import {
   canCreateGroupement,
   canReadGroupement,
-  canUpdateGroupement,
+  canUpdateGroupement
 } from '../middlewares/groupement/hasPermission.js';
 
 // Import controller
@@ -27,34 +28,41 @@ const router = express.Router();
 router.use(isAuth);
 
 // Create groupement
-router.post('/', 
+router.post('/',
   canCreateGroupement,
   validateGroupementCreate,
   groupementController.createGroupement
 );
 
 // Get groupement by ID
-router.get('/:id', 
+router.get('/:id',
   validateGroupementId,
   canReadGroupement,
   groupementController.getGroupementById
 );
 
+// List active users in a groupement (must be before generic '/')
+router.get('/:id/users',
+  validateGroupementId,
+  canReadGroupement,
+  groupementController.listUsersByGroupement
+);
+
 // List all groupements
-router.get('/', 
+router.get('/',
   canReadGroupement,
   groupementController.listGroupements
 );
 
 // Search groupements
-router.get('/search', 
+router.get('/search',
   canReadGroupement,
   validateGroupementSearch,
   groupementController.searchGroupements
 );
 
 // Update groupement
-router.patch('/:id', 
+router.patch('/:id',
   validateGroupementId,
   canUpdateGroupement,
   validateGroupementUpdate,
@@ -62,17 +70,20 @@ router.patch('/:id',
 );
 
 // Activate groupement
-router.post('/:id/activate', 
+router.post('/:id/activate',
   validateGroupementId,
   canUpdateGroupement,
   groupementController.activateGroupement
 );
 
 // Deactivate groupement
-router.post('/:id/deactivate', 
+router.post('/:id/deactivate',
   validateGroupementId,
   canUpdateGroupement,
   groupementController.deactivateGroupement
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;

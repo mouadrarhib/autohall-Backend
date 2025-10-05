@@ -1,7 +1,6 @@
 // src/controllers/groupement.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as groupementService from '../services/groupement.service.js';
 
 /**
@@ -40,17 +39,16 @@ import * as groupementService from '../services/groupement.service.js';
  *       409:
  *         description: Groupement name already exists
  */
-export const createGroupement = asyncHandler(async (req, res) => {
-  const { name, active = true } = req.body || {};
+export const createGroupement = async (req, res, next) => {
   try {
+    const { name, active = true } = req.body || {};
     const result = await groupementService.createGroupement(name, active);
     res.locals.objectId = result.id; // for audit
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Groupement created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -70,14 +68,20 @@ export const createGroupement = asyncHandler(async (req, res) => {
  *       404:
  *         description: Groupement not found
  */
-export const getGroupementById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const groupement = await groupementService.getGroupementById(id);
-  if (!groupement) {
-    return res.status(404).json({ error: 'Groupement not found' });
+export const getGroupementById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const groupement = await groupementService.getGroupementById(id);
+    
+    if (!groupement) {
+      return next(new AppError('Groupement not found', 404));
+    }
+    
+    sendSuccess(res, groupement, 'Groupement retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  res.json({ data: groupement });
-});
+};
 
 /**
  * @openapi
@@ -89,10 +93,14 @@ export const getGroupementById = asyncHandler(async (req, res) => {
  *       200:
  *         description: List of groupements
  */
-export const listGroupements = asyncHandler(async (req, res) => {
-  const groupements = await groupementService.listGroupements();
-  res.json({ data: groupements });
-});
+export const listGroupements = async (req, res, next) => {
+  try {
+    const groupements = await groupementService.listGroupements();
+    sendSuccess(res, groupements, 'Groupements list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -113,11 +121,15 @@ export const listGroupements = asyncHandler(async (req, res) => {
  *       400:
  *         description: Invalid search query
  */
-export const searchGroupements = asyncHandler(async (req, res) => {
-  const { q } = req.query;
-  const results = await groupementService.searchGroupements(q);
-  res.json({ data: results });
-});
+export const searchGroupements = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    const results = await groupementService.searchGroupements(q);
+    sendSuccess(res, results, 'Search completed successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -150,21 +162,22 @@ export const searchGroupements = asyncHandler(async (req, res) => {
  *       409:
  *         description: Groupement name already exists
  */
-export const updateGroupement = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name = null, active = null } = req.body || {};
+export const updateGroupement = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name = null, active = null } = req.body || {};
     const result = await groupementService.updateGroupement(id, name, active);
+    
     if (!result) {
-      return res.status(404).json({ error: 'Groupement not found' });
+      return next(new AppError('Groupement not found', 404));
     }
+    
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Groupement updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -184,20 +197,21 @@ export const updateGroupement = asyncHandler(async (req, res) => {
  *       404:
  *         description: Groupement not found
  */
-export const activateGroupement = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const activateGroupement = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await groupementService.activateGroupement(id);
+    
     if (!result) {
-      return res.status(404).json({ error: 'Groupement not found' });
+      return next(new AppError('Groupement not found', 404));
     }
+    
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Groupement activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -217,20 +231,21 @@ export const activateGroupement = asyncHandler(async (req, res) => {
  *       404:
  *         description: Groupement not found
  */
-export const deactivateGroupement = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const deactivateGroupement = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await groupementService.deactivateGroupement(id);
+    
     if (!result) {
-      return res.status(404).json({ error: 'Groupement not found' });
+      return next(new AppError('Groupement not found', 404));
     }
+    
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Groupement deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -283,15 +298,15 @@ export const deactivateGroupement = asyncHandler(async (req, res) => {
  *       404:
  *         description: Groupement not found
  */
-export const listUsersByGroupement = asyncHandler(async (req, res) => {
-  const idGroupement = Number(req.params.id);
-  
-  // Parse pagination parameters
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  // Call service with pagination
-  const result = await groupementService.listUsersByGroupement(idGroupement, page, pageSize);
-  
-  res.json(result);
-});
+export const listUsersByGroupement = async (req, res, next) => {
+  try {
+    const idGroupement = Number(req.params.id);
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await groupementService.listUsersByGroupement(idGroupement, page, pageSize);
+    sendSuccess(res, result, 'Users list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
