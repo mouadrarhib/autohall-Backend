@@ -1,7 +1,6 @@
 // src/controllers/typeperiode.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as typePeriodeService from '../services/typeperiode.service.js';
 
 /**
@@ -32,16 +31,15 @@ import * as typePeriodeService from '../services/typeperiode.service.js';
  *       201: { description: Created }
  *       400: { description: Validation error }
  */
-export const createTypePeriode = asyncHandler(async (req, res) => {
-  const { name, hebdomadaire, mensuel } = req.body || {};
+export const createTypePeriode = async (req, res, next) => {
   try {
+    const { name, hebdomadaire, mensuel } = req.body || {};
     const result = await typePeriodeService.createTypePeriode(name, { hebdomadaire, mensuel });
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'TypePeriode created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -58,12 +56,20 @@ export const createTypePeriode = asyncHandler(async (req, res) => {
  *       200: { description: Found }
  *       404: { description: Not found }
  */
-export const getTypePeriodeById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const row = await typePeriodeService.getActiveTypePeriodeById(id);
-  if (!row) return res.status(404).json({ error: 'TypePeriode not found' });
-  res.json({ data: row });
-});
+export const getTypePeriodeById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const row = await typePeriodeService.getActiveTypePeriodeById(id);
+    
+    if (!row) {
+      return next(new AppError('TypePeriode not found', 404));
+    }
+    
+    sendSuccess(res, row, 'TypePeriode retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -74,10 +80,14 @@ export const getTypePeriodeById = asyncHandler(async (req, res) => {
  *     responses:
  *       200: { description: List }
  */
-export const listActiveTypePeriodes = asyncHandler(async (_req, res) => {
-  const rows = await typePeriodeService.listActiveTypePeriodes();
-  res.json({ data: rows });
-});
+export const listActiveTypePeriodes = async (_req, res, next) => {
+  try {
+    const rows = await typePeriodeService.listActiveTypePeriodes();
+    sendSuccess(res, rows, 'Active TypePeriodes retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -105,18 +115,21 @@ export const listActiveTypePeriodes = asyncHandler(async (_req, res) => {
  *       200: { description: Updated }
  *       404: { description: Not found }
  */
-export const updateTypePeriode = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name, hebdomadaire, mensuel } = req.body || {};
+export const updateTypePeriode = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name, hebdomadaire, mensuel } = req.body || {};
     const result = await typePeriodeService.updateTypePeriode(id, { name, hebdomadaire, mensuel });
-    if (!result) return res.status(404).json({ error: 'TypePeriode not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypePeriode not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypePeriode updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -125,17 +138,20 @@ export const updateTypePeriode = asyncHandler(async (req, res) => {
  *     summary: Activate TypePeriode
  *     tags: [TypePeriodes]
  */
-export const activateTypePeriode = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const activateTypePeriode = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await typePeriodeService.activateTypePeriode(id);
-    if (!result) return res.status(404).json({ error: 'TypePeriode not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypePeriode not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypePeriode activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -144,14 +160,17 @@ export const activateTypePeriode = asyncHandler(async (req, res) => {
  *     summary: Deactivate TypePeriode
  *     tags: [TypePeriodes]
  */
-export const deactivateTypePeriode = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const deactivateTypePeriode = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await typePeriodeService.deactivateTypePeriode(id);
-    if (!result) return res.status(404).json({ error: 'TypePeriode not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypePeriode not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypePeriode deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
