@@ -1,7 +1,6 @@
 // src/controllers/succursale.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import { parseBoolean } from '../helpers/queryHelpers.js';
 import * as succursaleService from '../services/succursale.service.js';
 
@@ -41,18 +40,16 @@ import * as succursaleService from '../services/succursale.service.js';
  *       409:
  *         description: Succursale name already exists
  */
-export const createSuccursale = asyncHandler(async (req, res) => {
-  const { name, active = true } = req.body || {};
-
+export const createSuccursale = async (req, res, next) => {
   try {
+    const { name, active = true } = req.body || {};
     const result = await succursaleService.createSuccursale(name, active);
     res.locals.objectId = result.id; // for audit
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Succursale created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -72,16 +69,20 @@ export const createSuccursale = asyncHandler(async (req, res) => {
  *       404:
  *         description: Succursale not found
  */
-export const getSuccursaleById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const succursale = await succursaleService.getSuccursaleById(id);
-  
-  if (!succursale) {
-    return res.status(404).json({ error: 'Succursale not found' });
+export const getSuccursaleById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const succursale = await succursaleService.getSuccursaleById(id);
+    
+    if (!succursale) {
+      return next(new AppError('Succursale not found', 404));
+    }
+    
+    sendSuccess(res, succursale, 'Succursale retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  res.json({ data: succursale });
-});
+};
 
 /**
  * @openapi
@@ -109,14 +110,17 @@ export const getSuccursaleById = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of succursales
  */
-export const listSuccursales = asyncHandler(async (req, res) => {
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await succursaleService.listSuccursales(onlyActive, page, pageSize);
-  res.json(result);
-});
+export const listSuccursales = async (req, res, next) => {
+  try {
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    const result = await succursaleService.listSuccursales(onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Succursales list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -142,13 +146,16 @@ export const listSuccursales = asyncHandler(async (req, res) => {
  *       400:
  *         description: Invalid search query
  */
-export const searchSuccursales = asyncHandler(async (req, res) => {
-  const { q } = req.query;
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  
-  const results = await succursaleService.searchSuccursales(q, onlyActive);
-  res.json({ data: results });
-});
+export const searchSuccursales = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const results = await succursaleService.searchSuccursales(q, onlyActive);
+    sendSuccess(res, results, 'Search completed successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -179,24 +186,22 @@ export const searchSuccursales = asyncHandler(async (req, res) => {
  *       404:
  *         description: Succursale not found
  */
-export const updateSuccursale = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name = null, active = null } = req.body || {};
-
+export const updateSuccursale = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name = null, active = null } = req.body || {};
     const result = await succursaleService.updateSuccursale(id, name, active);
     
     if (!result) {
-      return res.status(404).json({ error: 'Succursale not found' });
+      return next(new AppError('Succursale not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Succursale updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -216,23 +221,21 @@ export const updateSuccursale = asyncHandler(async (req, res) => {
  *       404:
  *         description: Succursale not found
  */
-export const activateSuccursale = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const activateSuccursale = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await succursaleService.activateSuccursale(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'Succursale not found' });
+      return next(new AppError('Succursale not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Succursale activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -252,20 +255,18 @@ export const activateSuccursale = asyncHandler(async (req, res) => {
  *       404:
  *         description: Succursale not found
  */
-export const deactivateSuccursale = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const deactivateSuccursale = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await succursaleService.deactivateSuccursale(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'Succursale not found' });
+      return next(new AppError('Succursale not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Succursale deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
