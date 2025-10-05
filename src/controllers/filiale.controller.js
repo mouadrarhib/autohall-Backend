@@ -1,7 +1,6 @@
 // src/controllers/filiale.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as filialeService from '../services/filiale.service.js';
 
 /**
@@ -40,16 +39,15 @@ import * as filialeService from '../services/filiale.service.js';
  *       409:
  *         description: Filiale name already exists
  */
-export const createFiliale = asyncHandler(async (req, res) => {
-  const { name, active = true } = req.body || {};
+export const createFiliale = async (req, res, next) => {
   try {
+    const { name, active = true } = req.body || {};
     const result = await filialeService.createFiliale(name, active);
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Filiale created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -69,14 +67,20 @@ export const createFiliale = asyncHandler(async (req, res) => {
  *       404:
  *         description: Filiale not found
  */
-export const getFilialeById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const filiale = await filialeService.getFilialeById(id);
-  if (!filiale) {
-    return res.status(404).json({ error: 'Filiale not found' });
+export const getFilialeById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const filiale = await filialeService.getFilialeById(id);
+    
+    if (!filiale) {
+      return next(new AppError('Filiale not found', 404));
+    }
+    
+    sendSuccess(res, filiale, 'Filiale retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  res.json({ data: filiale });
-});
+};
 
 /**
  * @openapi
@@ -121,13 +125,16 @@ export const getFilialeById = asyncHandler(async (req, res) => {
  *                     totalPages:
  *                       type: integer
  */
-export const listFiliales = asyncHandler(async (req, res) => {
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await filialeService.listFiliales(page, pageSize);
-  res.json(result);
-});
+export const listFiliales = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    const result = await filialeService.listFiliales(page, pageSize);
+    sendSuccess(res, result, 'Filiales list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -160,20 +167,21 @@ export const listFiliales = asyncHandler(async (req, res) => {
  *       409:
  *         description: Filiale name already exists
  */
-export const updateFiliale = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name = null, active = null } = req.body || {};
+export const updateFiliale = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name = null, active = null } = req.body || {};
     const result = await filialeService.updateFiliale(id, name, active);
+    
     if (!result) {
-      return res.status(404).json({ error: 'Filiale not found' });
+      return next(new AppError('Filiale not found', 404));
     }
-    res.json({ data: result });
+    
+    sendSuccess(res, result, 'Filiale updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -193,19 +201,20 @@ export const updateFiliale = asyncHandler(async (req, res) => {
  *       404:
  *         description: Filiale not found
  */
-export const activateFiliale = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const activateFiliale = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await filialeService.activateFiliale(id);
+    
     if (!result) {
-      return res.status(404).json({ error: 'Filiale not found' });
+      return next(new AppError('Filiale not found', 404));
     }
-    res.json({ data: result });
+    
+    sendSuccess(res, result, 'Filiale activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -225,16 +234,17 @@ export const activateFiliale = asyncHandler(async (req, res) => {
  *       404:
  *         description: Filiale not found
  */
-export const deactivateFiliale = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const deactivateFiliale = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await filialeService.deactivateFiliale(id);
+    
     if (!result) {
-      return res.status(404).json({ error: 'Filiale not found' });
+      return next(new AppError('Filiale not found', 404));
     }
-    res.json({ data: result });
+    
+    sendSuccess(res, result, 'Filiale deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
