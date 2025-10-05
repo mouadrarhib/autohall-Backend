@@ -1,7 +1,6 @@
 // src/controllers/typevente.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as typeVenteService from '../services/typevente.service.js';
 
 /**
@@ -41,16 +40,15 @@ import * as typeVenteService from '../services/typevente.service.js';
  *       403:
  *         description: Forbidden
  */
-export const createTypeVente = asyncHandler(async (req, res) => {
-  const { name } = req.body || {};
+export const createTypeVente = async (req, res, next) => {
   try {
+    const { name } = req.body || {};
     const result = await typeVenteService.createTypeVente(name);
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'TypeVente created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -75,12 +73,20 @@ export const createTypeVente = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const getTypeVenteById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const row = await typeVenteService.getActiveTypeVenteById(id);
-  if (!row) return res.status(404).json({ error: 'TypeVente not found' });
-  res.json({ data: row });
-});
+export const getTypeVenteById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const row = await typeVenteService.getActiveTypeVenteById(id);
+    
+    if (!row) {
+      return next(new AppError('TypeVente not found', 404));
+    }
+    
+    sendSuccess(res, row, 'TypeVente retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -98,10 +104,14 @@ export const getTypeVenteById = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const listActiveTypeVentes = asyncHandler(async (_req, res) => {
-  const rows = await typeVenteService.listActiveTypeVentes();
-  res.json({ data: rows });
-});
+export const listActiveTypeVentes = async (_req, res, next) => {
+  try {
+    const rows = await typeVenteService.listActiveTypeVentes();
+    sendSuccess(res, rows, 'Active TypeVentes retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -137,18 +147,21 @@ export const listActiveTypeVentes = asyncHandler(async (_req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const updateTypeVente = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name } = req.body || {};
+export const updateTypeVente = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name } = req.body || {};
     const result = await typeVenteService.updateTypeVente(id, name);
-    if (!result) return res.status(404).json({ error: 'TypeVente not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypeVente not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypeVente updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -173,17 +186,20 @@ export const updateTypeVente = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const activateTypeVente = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const activateTypeVente = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await typeVenteService.activateTypeVente(id);
-    if (!result) return res.status(404).json({ error: 'TypeVente not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypeVente not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypeVente activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -208,14 +224,17 @@ export const activateTypeVente = asyncHandler(async (req, res) => {
  *       403:
  *         description: Forbidden
  */
-export const deactivateTypeVente = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const deactivateTypeVente = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await typeVenteService.deactivateTypeVente(id);
-    if (!result) return res.status(404).json({ error: 'TypeVente not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('TypeVente not found', 404));
+    }
+    
+    sendSuccess(res, result, 'TypeVente deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
