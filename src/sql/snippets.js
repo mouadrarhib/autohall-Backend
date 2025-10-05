@@ -227,23 +227,23 @@ export const SQL = {
     USERSITE_BY_SITE: 'EXEC dbo.sp_GetUserSitesBySite @idSite=:idSite',
   },
 
-APPPARAMETER: {
-  APPPARAMETER_CREATE: 'EXEC dbo.sp_AppParameter_Create @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
-  APPPARAMETER_GET_BY_ID: 'EXEC dbo.sp_AppParameter_GetById @Id=:id',
-  APPPARAMETER_GET_BY_KEY: 'EXEC dbo.sp_AppParameter_Get @Key=:key',
-  
-  // Updated with pagination
-  APPPARAMETER_LIST: 'EXEC dbo.sp_AppParameter_List @Type=:type, @Scope=:scope, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
-  
-  // Updated with pagination
-  APPPARAMETER_SEARCH: 'EXEC dbo.sp_AppParameter_Search @q=:q, @Type=:type, @Scope=:scope, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
-  
-  APPPARAMETER_SET: 'EXEC dbo.sp_AppParameter_Set @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
-  APPPARAMETER_UPDATE: 'EXEC dbo.sp_AppParameter_Update @Id=:id, @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
-  APPPARAMETER_ACTIVATE: 'EXEC dbo.sp_AppParameter_Activate @Id=:id',
-  APPPARAMETER_DEACTIVATE: 'EXEC dbo.sp_AppParameter_Deactivate @Id=:id',
-  APPPARAMETER_DELETE: 'EXEC dbo.sp_AppParameter_Delete @Id=:id',
-},
+  APPPARAMETER: {
+    APPPARAMETER_CREATE: 'EXEC dbo.sp_AppParameter_Create @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
+    APPPARAMETER_GET_BY_ID: 'EXEC dbo.sp_AppParameter_GetById @Id=:id',
+    APPPARAMETER_GET_BY_KEY: 'EXEC dbo.sp_AppParameter_Get @Key=:key',
+    
+    // Updated with pagination
+    APPPARAMETER_LIST: 'EXEC dbo.sp_AppParameter_List @Type=:type, @Scope=:scope, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+    
+    // Updated with pagination
+    APPPARAMETER_SEARCH: 'EXEC dbo.sp_AppParameter_Search @q=:q, @Type=:type, @Scope=:scope, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+    
+    APPPARAMETER_SET: 'EXEC dbo.sp_AppParameter_Set @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
+    APPPARAMETER_UPDATE: 'EXEC dbo.sp_AppParameter_Update @Id=:id, @Key=:key, @Value=:value, @Description=:description, @Type=:type, @Scope=:scope, @Active=:active',
+    APPPARAMETER_ACTIVATE: 'EXEC dbo.sp_AppParameter_Activate @Id=:id',
+    APPPARAMETER_DEACTIVATE: 'EXEC dbo.sp_AppParameter_Deactivate @Id=:id',
+    APPPARAMETER_DELETE: 'EXEC dbo.sp_AppParameter_Delete @Id=:id',
+  },
 
 
   AUDITLOG: {
@@ -297,67 +297,67 @@ APPPARAMETER: {
     `,
   },
 
-PERIODE: {
-  PERIODE_CREATE: `
-    EXEC dbo.sp_Periode_Create 
-    @year = :year, 
-    @month = :month, 
-    @week = :week, 
-    @startedDate = :startedDate, 
-    @endDate = :endDate, 
-    @typePeriodeId = :typePeriodeId
-  `,
-  PERIODE_UPDATE: `
-    EXEC dbo.sp_Periode_Update 
-    @id = :id, 
-    @year = :year, 
-    @month = :month, 
-    @week = :week, 
-    @startedDate = :startedDate, 
-    @endDate = :endDate, 
-    @typePeriodeId = :typePeriodeId
-  `,
-  PERIODE_GET_BY_ID_ACTIVE: `
-    EXEC dbo.sp_Periode_GetByIdActive @id = :id
-  `,
-  // Updated with pagination
-  PERIODE_LIST_ACTIVE: `
-    EXEC dbo.sp_Periode_ListActive 
-    @pageNumber = :pageNumber, 
-    @pageSize = :pageSize
-  `,
-  PERIODE_ACTIVATE: `
-    EXEC dbo.sp_Periode_Activate @id = :id
-  `,
-  PERIODE_DEACTIVATE: `
-    EXEC dbo.sp_Periode_Deactivate @id = :id
-  `,
-  // Updated with pagination
-  PERIODE_LIST_BY_TYPE: `
-    EXEC dbo.sp_Periode_ListByType 
-    @typePeriodeId = :typePeriodeId, 
-    @typePeriodeName = :typePeriodeName, 
-    @hebdomadaire = :hebdomadaire, 
-    @mensuel = :mensuel, 
-    @year = :year, 
-    @month = :month,
-    @pageNumber = :pageNumber,
-    @pageSize = :pageSize
-  `,
-  // Updated with pagination
-  PERIODE_LIST_YEARS: `
-    EXEC dbo.sp_Periode_ListYears 
-    @pageNumber = :pageNumber, 
-    @pageSize = :pageSize
-  `,
-  // Updated with pagination
-  PERIODE_LIST_BY_YEAR: `
-    EXEC dbo.sp_Periode_ListByYear 
-    @year = :year,
-    @pageNumber = :pageNumber,
-    @pageSize = :pageSize
-  `,
-},
+  PERIODE: {
+    PERIODE_CREATE: `
+      EXEC dbo.sp_Periode_Create 
+      @year = :year, 
+      @month = :month, 
+      @week = :week, 
+      @startedDate = :startedDate, 
+      @endDate = :endDate, 
+      @typePeriodeId = :typePeriodeId
+    `,
+    PERIODE_UPDATE: `
+      EXEC dbo.sp_Periode_Update 
+      @id = :id, 
+      @year = :year, 
+      @month = :month, 
+      @week = :week, 
+      @startedDate = :startedDate, 
+      @endDate = :endDate, 
+      @typePeriodeId = :typePeriodeId
+    `,
+    PERIODE_GET_BY_ID_ACTIVE: `
+      EXEC dbo.sp_Periode_GetByIdActive @id = :id
+    `,
+    // Updated with pagination
+    PERIODE_LIST_ACTIVE: `
+      EXEC dbo.sp_Periode_ListActive 
+      @pageNumber = :pageNumber, 
+      @pageSize = :pageSize
+    `,
+    PERIODE_ACTIVATE: `
+      EXEC dbo.sp_Periode_Activate @id = :id
+    `,
+    PERIODE_DEACTIVATE: `
+      EXEC dbo.sp_Periode_Deactivate @id = :id
+    `,
+    // Updated with pagination
+    PERIODE_LIST_BY_TYPE: `
+      EXEC dbo.sp_Periode_ListByType 
+      @typePeriodeId = :typePeriodeId, 
+      @typePeriodeName = :typePeriodeName, 
+      @hebdomadaire = :hebdomadaire, 
+      @mensuel = :mensuel, 
+      @year = :year, 
+      @month = :month,
+      @pageNumber = :pageNumber,
+      @pageSize = :pageSize
+    `,
+    // Updated with pagination
+    PERIODE_LIST_YEARS: `
+      EXEC dbo.sp_Periode_ListYears 
+      @pageNumber = :pageNumber, 
+      @pageSize = :pageSize
+    `,
+    // Updated with pagination
+    PERIODE_LIST_BY_YEAR: `
+      EXEC dbo.sp_Periode_ListByYear 
+      @year = :year,
+      @pageNumber = :pageNumber,
+      @pageSize = :pageSize
+    `,
+  },
 
   
   TYPE_VENTE: {
@@ -453,13 +453,18 @@ PERIODE: {
       EXEC dbo.sp_Objectif_GetByIdActive
         @id = :id
     `,
+    
+    // Updated with pagination
     OBJECTIF_LIST_ACTIVE: `
       EXEC dbo.sp_Objectif_ListActive
         @userId = :userId,
         @periodeId = :periodeId,
         @groupementId = :groupementId,
-        @siteId = :siteId
+        @siteId = :siteId,
+        @pageNumber = :pageNumber,
+        @pageSize = :pageSize
     `,
+    
     OBJECTIF_ACTIVATE: `
       EXEC dbo.sp_Objectif_Activate
         @id = :id
@@ -468,6 +473,8 @@ PERIODE: {
       EXEC dbo.sp_Objectif_Deactivate
         @id = :id
     `,
+    
+    // View query (you may want to add pagination here too if needed)
     OBJECTIF_VIEW: `
       SELECT * FROM dbo.V_Objectif
       WHERE (@userId IS NULL OR createdUserId = @userId)
@@ -476,5 +483,6 @@ PERIODE: {
         AND (@siteId IS NULL OR SiteID = @siteId)
       ORDER BY periodeID DESC, createdUserId ASC, id DESC
     `
-  }
+  },
+
 };

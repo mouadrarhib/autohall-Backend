@@ -3,7 +3,11 @@
 import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { QueryTypes } from 'sequelize';
-import { getFirstResult, prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { 
+  getFirstResult, 
+  prepareStoredProcParams 
+} from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 /**
  * Create a new Objectif
@@ -24,7 +28,6 @@ export async function createObjectif(data) {
     TMDirect: Number(data.TMDirect),
     MargeInterGroupe: Number(data.MargeInterGroupe)
   });
-
   const rows = await sequelize.query(SQL.OBJECTIF.OBJECTIF_CREATE, {
     replacements: params,
     type: QueryTypes.SELECT
@@ -53,7 +56,6 @@ export async function updateObjectif(id, data, updatedUserId = null) {
     MargeInterGroupe: Number(data.MargeInterGroupe),
     updatedUserId: updatedUserId != null ? Number(updatedUserId) : null
   });
-
   const rows = await sequelize.query(SQL.OBJECTIF.OBJECTIF_UPDATE, {
     replacements: params,
     type: QueryTypes.SELECT
@@ -73,25 +75,33 @@ export async function getActiveObjectifById(id) {
 }
 
 /**
- * List active Objectifs with optional filters
+ * List active Objectifs with optional filters and pagination
  */
-export async function listActiveObjectifs(filters = {}) {
+export async function listActiveObjectifs(filters = {}, page = 1, pageSize = 10) {
   const params = prepareStoredProcParams({
     userId: filters.userId != null ? Number(filters.userId) : null,
     periodeId: filters.periodeId != null ? Number(filters.periodeId) : null,
     groupementId: filters.groupementId != null ? Number(filters.groupementId) : null,
-    siteId: filters.siteId != null ? Number(filters.siteId) : null
+    siteId: filters.siteId != null ? Number(filters.siteId) : null,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-
-  const rows = await sequelize.query(SQL.OBJECTIF.OBJECTIF_LIST_ACTIVE, {
-    replacements: params,
-    type: QueryTypes.SELECT
-  });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.OBJECTIF.OBJECTIF_LIST_ACTIVE, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listActiveObjectifs service:', error);
+    throw error;
+  }
 }
 
 /**
  * List Objectifs using the view (enriched data)
+ * Note: This doesn't use pagination in the stored proc, so we return raw data
  */
 export async function listObjectifsView(filters = {}) {
   const params = prepareStoredProcParams({
@@ -100,7 +110,6 @@ export async function listObjectifsView(filters = {}) {
     groupementId: filters.groupementId != null ? Number(filters.groupementId) : null,
     siteId: filters.siteId != null ? Number(filters.siteId) : null
   });
-
   const rows = await sequelize.query(SQL.OBJECTIF.OBJECTIF_VIEW, {
     replacements: params,
     type: QueryTypes.SELECT
