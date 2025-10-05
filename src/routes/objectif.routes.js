@@ -2,19 +2,17 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
-
+import { errorHandler } from '../middlewares/responseHandler.js';
 import {
   validateObjectifCreate,
   validateObjectifUpdate,
   validateObjectifId
 } from '../middlewares/objectif/validateInput.js';
-
 import {
   canCreateObjectif,
   canReadObjectif,
   canUpdateObjectif
 } from '../middlewares/objectif/hasPermission.js';
-
 import * as controller from '../controllers/objectif.controller.js';
 
 const router = express.Router();
@@ -27,6 +25,13 @@ router.post(
   canCreateObjectif,
   validateObjectifCreate,
   controller.createObjectif
+);
+
+// List with view (enriched) - must be before /:id to avoid route conflicts
+router.get(
+  '/view',
+  canReadObjectif,
+  controller.listObjectifsView
 );
 
 // Get active by id
@@ -42,13 +47,6 @@ router.get(
   '/',
   canReadObjectif,
   controller.listActiveObjectifs
-);
-
-// List with view (enriched)
-router.get(
-  '/view',
-  canReadObjectif,
-  controller.listObjectifsView
 );
 
 // Update
@@ -75,5 +73,8 @@ router.post(
   canUpdateObjectif,
   controller.deactivateObjectif
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
