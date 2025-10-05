@@ -82,7 +82,7 @@ export const getObjectifById = asyncHandler(async (req, res) => {
  * @openapi
  * /api/objectifs:
  *   get:
- *     summary: List active Objectifs with optional filters
+ *     summary: List active Objectifs with optional filters and pagination
  *     tags: [Objectifs]
  *     security:
  *       - bearerAuth: []
@@ -99,8 +99,19 @@ export const getObjectifById = asyncHandler(async (req, res) => {
  *       - in: query
  *         name: siteId
  *         schema: { type: integer }
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
- *       200: { description: List }
+ *       200:
+ *         description: Paginated list of objectifs
  */
 export const listActiveObjectifs = asyncHandler(async (req, res) => {
   const filters = {
@@ -109,8 +120,12 @@ export const listActiveObjectifs = asyncHandler(async (req, res) => {
     groupementId: req.query.groupementId,
     siteId: req.query.siteId
   };
-  const rows = await objectifService.listActiveObjectifs(filters);
-  res.json({ data: rows });
+  
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 10);
+  
+  const result = await objectifService.listActiveObjectifs(filters, page, pageSize);
+  res.json(result);
 });
 
 /**
