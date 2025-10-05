@@ -2,19 +2,17 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
-
+import { errorHandler } from '../middlewares/responseHandler.js';
 import {
   validateTypePeriodeCreate,
   validateTypePeriodeUpdate,
   validateTypePeriodeId
 } from '../middlewares/typeperiode/validateInput.js';
-
 import {
   canCreateTypePeriode,
   canReadTypePeriode,
   canUpdateTypePeriode
 } from '../middlewares/typeperiode/hasPermission.js';
-
 import * as controller from '../controllers/typeperiode.controller.js';
 
 const router = express.Router();
@@ -68,5 +66,8 @@ router.post(
   canUpdateTypePeriode,
   controller.deactivateTypePeriode
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
