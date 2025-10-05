@@ -1,7 +1,6 @@
 // src/controllers/modele.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import { parseBoolean } from '../helpers/queryHelpers.js';
 import * as modeleService from '../services/modele.service.js';
 
@@ -45,18 +44,16 @@ import * as modeleService from '../services/modele.service.js';
  *       404:
  *         description: Marque not found
  */
-export const createModele = asyncHandler(async (req, res) => {
-  const { name, idMarque, active = true } = req.body || {};
-
+export const createModele = async (req, res, next) => {
   try {
+    const { name, idMarque, active = true } = req.body || {};
     const result = await modeleService.createModele(name, idMarque, active);
     res.locals.objectId = result.id; // for audit
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Modele created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -76,16 +73,20 @@ export const createModele = asyncHandler(async (req, res) => {
  *       404:
  *         description: Modele not found
  */
-export const getModeleById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const modele = await modeleService.getModeleById(id);
-  
-  if (!modele) {
-    return res.status(404).json({ error: 'Modele not found' });
+export const getModeleById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const modele = await modeleService.getModeleById(id);
+    
+    if (!modele) {
+      return next(new AppError('Modele not found', 404));
+    }
+    
+    sendSuccess(res, modele, 'Modele retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  res.json({ data: modele });
-});
+};
 
 /**
  * @openapi
@@ -118,15 +119,19 @@ export const getModeleById = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of modeles
  */
-export const listModeles = asyncHandler(async (req, res) => {
-  const { idMarque } = req.query;
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await modeleService.listModeles(idMarque, onlyActive, page, pageSize);
-  res.json(result);
-});
+export const listModeles = async (req, res, next) => {
+  try {
+    const { idMarque } = req.query;
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await modeleService.listModeles(idMarque, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Modeles list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -159,15 +164,19 @@ export const listModeles = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of modeles for the marque
  */
-export const listModelesByMarque = asyncHandler(async (req, res) => {
-  const idMarque = Number(req.params.idMarque);
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await modeleService.listModelesByMarque(idMarque, onlyActive, page, pageSize);
-  res.json(result);
-});
+export const listModelesByMarque = async (req, res, next) => {
+  try {
+    const idMarque = Number(req.params.idMarque);
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await modeleService.listModelesByMarque(idMarque, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Modeles by marque retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -208,15 +217,19 @@ export const listModelesByMarque = asyncHandler(async (req, res) => {
  *       400:
  *         description: Invalid search query
  */
-export const searchModeles = asyncHandler(async (req, res) => {
-  const { q, idMarque } = req.query;
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await modeleService.searchModeles(q, idMarque, onlyActive, page, pageSize);
-  res.json(result);
-});
+export const searchModeles = async (req, res, next) => {
+  try {
+    const { q, idMarque } = req.query;
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await modeleService.searchModeles(q, idMarque, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Search completed successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -249,24 +262,22 @@ export const searchModeles = asyncHandler(async (req, res) => {
  *       404:
  *         description: Modele not found
  */
-export const updateModele = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name = null, idMarque = null, active = null } = req.body || {};
-
+export const updateModele = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name = null, idMarque = null, active = null } = req.body || {};
     const result = await modeleService.updateModele(id, name, idMarque, active);
     
     if (!result) {
-      return res.status(404).json({ error: 'Modele not found' });
+      return next(new AppError('Modele not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Modele updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -286,23 +297,21 @@ export const updateModele = asyncHandler(async (req, res) => {
  *       404:
  *         description: Modele not found
  */
-export const activateModele = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const activateModele = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await modeleService.activateModele(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'Modele not found' });
+      return next(new AppError('Modele not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Modele activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -322,20 +331,18 @@ export const activateModele = asyncHandler(async (req, res) => {
  *       404:
  *         description: Modele not found
  */
-export const deactivateModele = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const deactivateModele = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await modeleService.deactivateModele(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'Modele not found' });
+      return next(new AppError('Modele not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'Modele deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};

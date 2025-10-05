@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
+import { errorHandler } from '../middlewares/responseHandler.js';
 
 // Import validation middleware
 import {
@@ -30,44 +31,44 @@ const router = express.Router();
 router.use(isAuth);
 
 // Create modele
-router.post('/', 
+router.post('/',
   canCreateModele,
   validateModeleCreate,
   modeleController.createModele
 );
 
-// Get modele by ID  
-router.get('/:id', 
-  validateModeleId,
-  canReadModele,
-  modeleController.getModeleById
-);
-
-// List all modeles
-router.get('/', 
-  canReadModele,
-  validateModeleQuery,
-  modeleController.listModeles
-);
-
-// Search modeles
-router.get('/search', 
+// Search modeles (must be before /:id to avoid route conflicts)
+router.get('/search',
   canReadModele,
   validateModeleSearch,
   validateModeleQuery,
   modeleController.searchModeles
 );
 
-// List modeles by marque
-router.get('/by-marque/:idMarque', 
+// List modeles by marque (must be before /:id to avoid route conflicts)
+router.get('/by-marque/:idMarque',
   validateMarqueId,
   canReadModele,
   validateModeleQuery,
   modeleController.listModelesByMarque
 );
 
+// Get modele by ID
+router.get('/:id',
+  validateModeleId,
+  canReadModele,
+  modeleController.getModeleById
+);
+
+// List all modeles
+router.get('/',
+  canReadModele,
+  validateModeleQuery,
+  modeleController.listModeles
+);
+
 // Update modele
-router.patch('/:id', 
+router.patch('/:id',
   validateModeleId,
   canUpdateModele,
   validateModeleUpdate,
@@ -75,17 +76,20 @@ router.patch('/:id',
 );
 
 // Activate modele
-router.post('/:id/activate', 
+router.post('/:id/activate',
   validateModeleId,
   canUpdateModele,
   modeleController.activateModele
 );
 
 // Deactivate modele
-router.post('/:id/deactivate', 
+router.post('/:id/deactivate',
   validateModeleId,
   canUpdateModele,
   modeleController.deactivateModele
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
