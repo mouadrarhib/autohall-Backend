@@ -82,7 +82,7 @@ router.get(
 router.get(
   '/years',
   canReadPeriode,
-  controller.listPeriodeYears
+  controller.listYears
 );
 
 router.get(
