@@ -1,7 +1,6 @@
 // src/controllers/periode.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as periodeService from '../services/periode.service.js';
 
 /**
@@ -56,15 +55,14 @@ import * as periodeService from '../services/periode.service.js';
  *       400:
  *         description: Validation error
  */
-export const createPeriode = asyncHandler(async (req, res) => {
+export const createPeriode = async (req, res, next) => {
   try {
     const result = await periodeService.createPeriode(req.body);
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Periode created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -109,17 +107,20 @@ export const createPeriode = asyncHandler(async (req, res) => {
  *       404:
  *         description: Periode not found
  */
-export const updatePeriode = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const updatePeriode = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await periodeService.updatePeriode(id, req.body);
-    if (!result) return res.status(404).json({ error: 'Periode not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Periode not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Periode updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -141,12 +142,20 @@ export const updatePeriode = asyncHandler(async (req, res) => {
  *       404:
  *         description: Periode not found
  */
-export const getPeriodeById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const periode = await periodeService.getPeriodeById(id);
-  if (!periode) return res.status(404).json({ error: 'Periode not found' });
-  res.json({ data: periode });
-});
+export const getPeriodeById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const periode = await periodeService.getPeriodeById(id);
+    
+    if (!periode) {
+      return next(new AppError('Periode not found', 404));
+    }
+    
+    sendSuccess(res, periode, 'Periode retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -171,13 +180,16 @@ export const getPeriodeById = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of periodes
  */
-export const listActivePeriodes = asyncHandler(async (req, res) => {
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await periodeService.listActivePeriodes(page, pageSize);
-  res.json(result);
-});
+export const listActivePeriodes = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    const result = await periodeService.listActivePeriodes(page, pageSize);
+    sendSuccess(res, result, 'Active periodes retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -199,17 +211,20 @@ export const listActivePeriodes = asyncHandler(async (req, res) => {
  *       404:
  *         description: Periode not found
  */
-export const activatePeriode = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const activatePeriode = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await periodeService.activatePeriode(id);
-    if (!result) return res.status(404).json({ error: 'Periode not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Periode not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Periode activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -231,17 +246,20 @@ export const activatePeriode = asyncHandler(async (req, res) => {
  *       404:
  *         description: Periode not found
  */
-export const deactivatePeriode = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const deactivatePeriode = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await periodeService.deactivatePeriode(id);
-    if (!result) return res.status(404).json({ error: 'Periode not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Periode not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Periode deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -290,22 +308,24 @@ export const deactivatePeriode = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of periodes
  */
-export const listPeriodesByType = asyncHandler(async (req, res) => {
-  const filters = {
-    typePeriodeId: req.query.typePeriodeId,
-    typePeriodeName: req.query.typePeriodeName,
-    hebdomadaire: req.query.hebdomadaire === 'true',
-    mensuel: req.query.mensuel === 'true',
-    year: req.query.year,
-    month: req.query.month
-  };
-  
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await periodeService.listPeriodesByType(filters, page, pageSize);
-  res.json(result);
-});
+export const listPeriodesByType = async (req, res, next) => {
+  try {
+    const filters = {
+      typePeriodeId: req.query.typePeriodeId,
+      typePeriodeName: req.query.typePeriodeName,
+      hebdomadaire: req.query.hebdomadaire === 'true',
+      mensuel: req.query.mensuel === 'true',
+      year: req.query.year,
+      month: req.query.month
+    };
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    const result = await periodeService.listPeriodesByType(filters, page, pageSize);
+    sendSuccess(res, result, 'Periodes by type retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -330,13 +350,16 @@ export const listPeriodesByType = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of years
  */
-export const listYears = asyncHandler(async (req, res) => {
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await periodeService.listYears(page, pageSize);
-  res.json(result);
-});
+export const listYears = async (req, res, next) => {
+  try {
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    const result = await periodeService.listYears(page, pageSize);
+    sendSuccess(res, result, 'Years list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -368,15 +391,19 @@ export const listYears = asyncHandler(async (req, res) => {
  *       400:
  *         description: Year is required
  */
-export const listPeriodesByYear = asyncHandler(async (req, res) => {
-  const year = req.query.year;
-  if (!year) {
-    return res.status(400).json({ error: 'Year parameter is required' });
+export const listPeriodesByYear = async (req, res, next) => {
+  try {
+    const year = req.query.year;
+    
+    if (!year) {
+      return next(new AppError('Year parameter is required', 400));
+    }
+    
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    const result = await periodeService.listPeriodesByYear(year, page, pageSize);
+    sendSuccess(res, result, 'Periodes by year retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await periodeService.listPeriodesByYear(year, page, pageSize);
-  res.json(result);
-});
+};

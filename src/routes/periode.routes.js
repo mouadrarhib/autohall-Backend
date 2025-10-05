@@ -2,7 +2,7 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
-
+import { errorHandler } from '../middlewares/responseHandler.js';
 import {
   validatePeriodeCreate,
   validatePeriodeUpdate,
@@ -10,13 +10,11 @@ import {
   validatePeriodeListByType,
   validatePeriodeYearParam
 } from '../middlewares/periode/validateInput.js';
-
 import {
   canCreatePeriode,
   canReadPeriode,
   canUpdatePeriode
 } from '../middlewares/periode/hasPermission.js';
-
 import * as controller from '../controllers/periode.controller.js';
 
 const router = express.Router();
@@ -29,6 +27,29 @@ router.post(
   canCreatePeriode,
   validatePeriodeCreate,
   controller.createPeriode
+);
+
+// List by type (must be before /:id to avoid route conflicts)
+router.get(
+  '/by-type',
+  canReadPeriode,
+  validatePeriodeListByType,
+  controller.listPeriodesByType
+);
+
+// List active years (must be before /:id to avoid route conflicts)
+router.get(
+  '/years',
+  canReadPeriode,
+  controller.listYears
+);
+
+// List periodes by specific year (must be before /:id to avoid route conflicts)
+router.get(
+  '/years/:year',
+  canReadPeriode,
+  validatePeriodeYearParam,
+  controller.listPeriodesByYear
 );
 
 // Get active by id
@@ -71,24 +92,7 @@ router.post(
   controller.deactivatePeriode
 );
 
-router.get(
-  '/by-type',
-  canReadPeriode,
-  validatePeriodeListByType,
-  controller.listPeriodesByType
-);
+// Error handler for this router
+router.use(errorHandler);
 
-// NEW: list active years
-router.get(
-  '/years',
-  canReadPeriode,
-  controller.listYears
-);
-
-router.get(
-  '/years/:year',
-  canReadPeriode,
-  validatePeriodeYearParam,
-  controller.listPeriodesByYear
-);
 export default router;
