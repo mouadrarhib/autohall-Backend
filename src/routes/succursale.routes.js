@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
+import { errorHandler } from '../middlewares/responseHandler.js';
 
 // Import validation middleware
 import {
@@ -28,36 +29,36 @@ const router = express.Router();
 router.use(isAuth);
 
 // Create succursale
-router.post('/', 
+router.post('/',
   canCreateSuccursale,
   validateSuccursaleCreate,
   succursaleController.createSuccursale
 );
 
-// Get succursale by ID  
-router.get('/:id', 
-  validateSuccursaleId,
-  canReadSuccursale,
-  succursaleController.getSuccursaleById
-);
-
-// List all succursales
-router.get('/', 
-  canReadSuccursale,
-  validateSuccursaleQuery,
-  succursaleController.listSuccursales
-);
-
-// Search succursales
-router.get('/search', 
+// Search succursales (must be before /:id to avoid route conflicts)
+router.get('/search',
   canReadSuccursale,
   validateSuccursaleSearch,
   validateSuccursaleQuery,
   succursaleController.searchSuccursales
 );
 
+// Get succursale by ID
+router.get('/:id',
+  validateSuccursaleId,
+  canReadSuccursale,
+  succursaleController.getSuccursaleById
+);
+
+// List all succursales
+router.get('/',
+  canReadSuccursale,
+  validateSuccursaleQuery,
+  succursaleController.listSuccursales
+);
+
 // Update succursale
-router.patch('/:id', 
+router.patch('/:id',
   validateSuccursaleId,
   canUpdateSuccursale,
   validateSuccursaleUpdate,
@@ -65,17 +66,20 @@ router.patch('/:id',
 );
 
 // Activate succursale
-router.post('/:id/activate', 
+router.post('/:id/activate',
   validateSuccursaleId,
   canUpdateSuccursale,
   succursaleController.activateSuccursale
 );
 
 // Deactivate succursale
-router.post('/:id/deactivate', 
+router.post('/:id/deactivate',
   validateSuccursaleId,
   canUpdateSuccursale,
   succursaleController.deactivateSuccursale
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
