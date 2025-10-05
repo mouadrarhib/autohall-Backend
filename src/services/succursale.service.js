@@ -4,7 +4,11 @@ import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { QueryTypes } from 'sequelize';
 import { sanitizeSearchQuery } from '../helpers/queryHelpers.js';
-import { getFirstResult, prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { 
+  getFirstResult, 
+  prepareStoredProcParams 
+} from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 /**
  * Create a new succursale
@@ -14,17 +18,14 @@ export async function createSuccursale(name, active = true) {
     name: name.trim(),
     active: active ? 1 : 0
   });
-
   try {
     const result = await sequelize.query(SQL.SUCCURSALE.SUCCURSALE_CREATE, {
       replacements: params,
       type: QueryTypes.SELECT
     });
-
     const idRow = Array.isArray(result) ? result.find(r => typeof r?.id !== 'undefined') : null;
     const newId = idRow?.id;
     if (!newId) throw new Error('Create operation did not return new ID');
-
     const createdSuccursale = await getSuccursaleById(newId);
     return createdSuccursale || { id: Number(newId), name: name.trim(), active: !!active };
   } catch (error) {
@@ -45,15 +46,25 @@ export async function getSuccursaleById(id) {
 }
 
 /**
- * List succursales
+ * List succursales with pagination
  */
-export async function listSuccursales(onlyActive = true) {
-  const params = prepareStoredProcParams({ onlyActive: onlyActive ? 1 : 0 });
-  const rows = await sequelize.query(SQL.SUCCURSALE.SUCCURSALE_LIST, {
-    replacements: params,
-    type: QueryTypes.SELECT
+export async function listSuccursales(onlyActive = true, page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    onlyActive: onlyActive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
   });
-  return rows || [];
+  
+  try {
+    const rows = await sequelize.query(SQL.SUCCURSALE.SUCCURSALE_LIST, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in listSuccursales service:', error);
+    throw error;
+  }
 }
 
 /**
@@ -79,7 +90,6 @@ export async function updateSuccursale(id, name = null, active = null) {
     name: name ? name.trim() : null,
     active: active === null ? null : (active ? 1 : 0)
   });
-
   try {
     const rows = await sequelize.query(SQL.SUCCURSALE.SUCCURSALE_UPDATE, {
       replacements: params,
