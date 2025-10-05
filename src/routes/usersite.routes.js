@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
+import { errorHandler } from '../middlewares/responseHandler.js';
 
 // Import validation middleware
 import {
@@ -30,48 +31,48 @@ const router = express.Router();
 router.use(isAuth);
 
 // Create usersite
-router.post('/', 
+router.post('/',
   canCreateUserSite,
   validateUserSiteCreate,
   usersiteController.createUserSite
 );
 
+// Search usersites (must be before /:id to avoid route conflicts)
+router.get('/search',
+  canReadUserSite,
+  validateUserSiteSearch,
+  usersiteController.searchUserSites
+);
+
+// List usersites by groupement (must be before /:id to avoid route conflicts)
+router.get('/by-groupement/:idGroupement',
+  validateGroupementId,
+  canReadUserSite,
+  usersiteController.listUserSitesByGroupement
+);
+
+// List usersites by site (must be before /:id to avoid route conflicts)
+router.get('/by-site/:idSite',
+  validateSiteId,
+  canReadUserSite,
+  usersiteController.listUserSitesBySite
+);
+
 // Get usersite by ID
-router.get('/:id', 
+router.get('/:id',
   validateUserSiteId,
   canReadUserSite,
   usersiteController.getUserSiteById
 );
 
 // List all usersites
-router.get('/', 
+router.get('/',
   canReadUserSite,
   usersiteController.listUserSites
 );
 
-// Search usersites
-router.get('/search', 
-  canReadUserSite,
-  validateUserSiteSearch,
-  usersiteController.searchUserSites
-);
-
-// List usersites by groupement
-router.get('/by-groupement/:idGroupement', 
-  validateGroupementId,
-  canReadUserSite,
-  usersiteController.listUserSitesByGroupement
-);
-
-// List usersites by site
-router.get('/by-site/:idSite', 
-  validateSiteId,
-  canReadUserSite,
-  usersiteController.listUserSitesBySite
-);
-
 // Update usersite
-router.patch('/:id', 
+router.patch('/:id',
   validateUserSiteId,
   canUpdateUserSite,
   validateUserSiteUpdate,
@@ -79,17 +80,20 @@ router.patch('/:id',
 );
 
 // Activate usersite
-router.post('/:id/activate', 
+router.post('/:id/activate',
   validateUserSiteId,
   canUpdateUserSite,
   usersiteController.activateUserSite
 );
 
 // Deactivate usersite
-router.post('/:id/deactivate', 
+router.post('/:id/deactivate',
   validateUserSiteId,
   canUpdateUserSite,
   usersiteController.deactivateUserSite
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
