@@ -1,7 +1,6 @@
 // src/controllers/appparameter.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import { parseBoolean } from '../helpers/queryHelpers.js';
 import * as appparameterService from '../services/appparameter.service.js';
 
@@ -53,18 +52,16 @@ import * as appparameterService from '../services/appparameter.service.js';
  *       409:
  *         description: Duplicate key
  */
-export const createAppParameter = asyncHandler(async (req, res) => {
-  const { key, value = null, description = null, type = null, scope = null, active = true } = req.body || {};
-
+export const createAppParameter = async (req, res, next) => {
   try {
+    const { key, value = null, description = null, type = null, scope = null, active = true } = req.body || {};
     const result = await appparameterService.createAppParameter(key, value, description, type, scope, active);
     res.locals.objectId = result.id; // for audit
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'App parameter created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -84,16 +81,20 @@ export const createAppParameter = asyncHandler(async (req, res) => {
  *       404:
  *         description: App parameter not found
  */
-export const getAppParameterById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const appparameter = await appparameterService.getAppParameterById(id);
-  
-  if (!appparameter) {
-    return res.status(404).json({ error: 'AppParameter not found' });
+export const getAppParameterById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const appparameter = await appparameterService.getAppParameterById(id);
+    
+    if (!appparameter) {
+      return next(new AppError('AppParameter not found', 404));
+    }
+    
+    sendSuccess(res, appparameter, 'App parameter retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  res.json({ data: appparameter });
-});
+};
 
 /**
  * @openapi
@@ -113,16 +114,20 @@ export const getAppParameterById = asyncHandler(async (req, res) => {
  *       404:
  *         description: App parameter not found
  */
-export const getAppParameterByKey = asyncHandler(async (req, res) => {
-  const key = req.params.key;
-  const appparameter = await appparameterService.getAppParameterByKey(key);
-  
-  if (!appparameter) {
-    return res.status(404).json({ error: 'AppParameter not found' });
+export const getAppParameterByKey = async (req, res, next) => {
+  try {
+    const key = req.params.key;
+    const appparameter = await appparameterService.getAppParameterByKey(key);
+    
+    if (!appparameter) {
+      return next(new AppError('AppParameter not found', 404));
+    }
+    
+    sendSuccess(res, appparameter, 'App parameter retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  res.json({ data: appparameter });
-});
+};
 
 /**
  * @openapi
@@ -160,15 +165,19 @@ export const getAppParameterByKey = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of app parameters
  */
-export const listAppParameters = asyncHandler(async (req, res) => {
-  const { type, scope } = req.query;
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await appparameterService.listAppParameters(type, scope, onlyActive, page, pageSize);
-  res.json(result);
-});
+export const listAppParameters = async (req, res, next) => {
+  try {
+    const { type, scope } = req.query;
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await appparameterService.listAppParameters(type, scope, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'App parameters retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -212,15 +221,19 @@ export const listAppParameters = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated search results
  */
-export const searchAppParameters = asyncHandler(async (req, res) => {
-  const { q, type, scope } = req.query;
-  const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await appparameterService.searchAppParameters(q, type, scope, onlyActive, page, pageSize);
-  res.json(result);
-});
+export const searchAppParameters = async (req, res, next) => {
+  try {
+    const { q, type, scope } = req.query;
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await appparameterService.searchAppParameters(q, type, scope, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Search completed successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -258,18 +271,16 @@ export const searchAppParameters = asyncHandler(async (req, res) => {
  *       200:
  *         description: Parameter upserted successfully
  */
-export const setAppParameter = asyncHandler(async (req, res) => {
-  const { key, value, description = null, type = null, scope = null, active = true } = req.body || {};
-
+export const setAppParameter = async (req, res, next) => {
   try {
+    const { key, value, description = null, type = null, scope = null, active = true } = req.body || {};
     const result = await appparameterService.setAppParameter(key, value, description, type, scope, active);
     res.locals.objectId = result.id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'App parameter set successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -311,24 +322,23 @@ export const setAppParameter = asyncHandler(async (req, res) => {
  *       404:
  *         description: App parameter not found
  */
-export const updateAppParameterById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const updates = req.body || {};
-
+export const updateAppParameterById = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const updates = req.body || {};
+    
     const result = await appparameterService.updateAppParameterById(id, updates);
     
     if (!result) {
-      return res.status(404).json({ error: 'AppParameter not found' });
+      return next(new AppError('AppParameter not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'App parameter updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -370,24 +380,23 @@ export const updateAppParameterById = asyncHandler(async (req, res) => {
  *       404:
  *         description: App parameter not found
  */
-export const updateAppParameterByKey = asyncHandler(async (req, res) => {
-  const key = req.params.key;
-  const updates = req.body || {};
-
+export const updateAppParameterByKey = async (req, res, next) => {
   try {
+    const key = req.params.key;
+    const updates = req.body || {};
+    
     const result = await appparameterService.updateAppParameterByKey(key, updates);
     
     if (!result) {
-      return res.status(404).json({ error: 'AppParameter not found' });
+      return next(new AppError('AppParameter not found', 404));
     }
     
     res.locals.objectId = result.id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'App parameter updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -407,23 +416,21 @@ export const updateAppParameterByKey = asyncHandler(async (req, res) => {
  *       404:
  *         description: App parameter not found
  */
-export const activateAppParameter = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const activateAppParameter = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await appparameterService.activateAppParameter(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'AppParameter not found' });
+      return next(new AppError('AppParameter not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'App parameter activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -443,20 +450,18 @@ export const activateAppParameter = asyncHandler(async (req, res) => {
  *       404:
  *         description: App parameter not found
  */
-export const deactivateAppParameter = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const deactivateAppParameter = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await appparameterService.deactivateAppParameter(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'AppParameter not found' });
+      return next(new AppError('AppParameter not found', 404));
     }
     
     res.locals.objectId = id; // for audit
-    res.json({ data: result });
+    sendSuccess(res, result, 'App parameter deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
