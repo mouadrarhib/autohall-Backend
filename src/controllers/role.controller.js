@@ -1,7 +1,6 @@
 // src/controllers/role.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as roleService from '../services/role.service.js';
 
 /**
@@ -43,17 +42,15 @@ import * as roleService from '../services/role.service.js';
  *       409:
  *         description: Role name already exists
  */
-export const createRole = asyncHandler(async (req, res) => {
-  const { name, description = null, active = true } = req.body || {};
-
+export const createRole = async (req, res, next) => {
   try {
+    const { name, description = null, active = true } = req.body || {};
     const result = await roleService.createRole(name, description, active);
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Role created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -73,16 +70,20 @@ export const createRole = asyncHandler(async (req, res) => {
  *       404:
  *         description: Role not found
  */
-export const getRoleById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const role = await roleService.getRoleById(id);
-  
-  if (!role) {
-    return res.status(404).json({ error: 'Role not found' });
+export const getRoleById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const role = await roleService.getRoleById(id);
+    
+    if (!role) {
+      return next(new AppError('Role not found', 404));
+    }
+    
+    sendSuccess(res, role, 'Role retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
   }
-  
-  res.json({ data: role });
-});
+};
 
 /**
  * @openapi
@@ -94,10 +95,14 @@ export const getRoleById = asyncHandler(async (req, res) => {
  *       200:
  *         description: List of roles
  */
-export const listRoles = asyncHandler(async (req, res) => {
-  const roles = await roleService.listRoles();
-  res.json({ data: roles });
-});
+export const listRoles = async (req, res, next) => {
+  try {
+    const roles = await roleService.listRoles();
+    sendSuccess(res, roles, 'Roles list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -118,11 +123,15 @@ export const listRoles = asyncHandler(async (req, res) => {
  *       400:
  *         description: Invalid search query
  */
-export const searchRoles = asyncHandler(async (req, res) => {
-  const { q } = req.query;
-  const results = await roleService.searchRoles(q);
-  res.json({ data: results });
-});
+export const searchRoles = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    const results = await roleService.searchRoles(q);
+    sendSuccess(res, results, 'Search completed successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -160,23 +169,21 @@ export const searchRoles = asyncHandler(async (req, res) => {
  *       409:
  *         description: Role name already exists
  */
-export const updateRole = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const { name, description = null, active } = req.body || {};
-
+export const updateRole = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const { name, description = null, active } = req.body || {};
     const result = await roleService.updateRole(id, name, description, active);
     
     if (!result) {
-      return res.status(404).json({ error: 'Role not found' });
+      return next(new AppError('Role not found', 404));
     }
     
-    res.json({ data: result });
+    sendSuccess(res, result, 'Role updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -196,22 +203,20 @@ export const updateRole = asyncHandler(async (req, res) => {
  *       404:
  *         description: Role not found
  */
-export const activateRole = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const activateRole = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await roleService.activateRole(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'Role not found' });
+      return next(new AppError('Role not found', 404));
     }
     
-    res.json({ data: result });
+    sendSuccess(res, result, 'Role activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -231,19 +236,17 @@ export const activateRole = asyncHandler(async (req, res) => {
  *       404:
  *         description: Role not found
  */
-export const deactivateRole = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-
+export const deactivateRole = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await roleService.deactivateRole(id);
     
     if (!result) {
-      return res.status(404).json({ error: 'Role not found' });
+      return next(new AppError('Role not found', 404));
     }
     
-    res.json({ data: result });
+    sendSuccess(res, result, 'Role deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};

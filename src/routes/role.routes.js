@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
+import { errorHandler } from '../middlewares/responseHandler.js';
 
 // Import validation middleware
 import {
@@ -27,34 +28,34 @@ const router = express.Router();
 router.use(isAuth);
 
 // Create role
-router.post('/', 
+router.post('/',
   canCreateRole,
   validateRoleCreate,
   roleController.createRole
 );
 
+// Search roles (must be before /:id to avoid route conflicts)
+router.get('/search',
+  canReadRole,
+  validateRoleSearch,
+  roleController.searchRoles
+);
+
 // Get role by ID
-router.get('/:id', 
+router.get('/:id',
   validateRoleId,
   canReadRole,
   roleController.getRoleById
 );
 
 // List all roles
-router.get('/', 
+router.get('/',
   canReadRole,
   roleController.listRoles
 );
 
-// Search roles
-router.get('/search', 
-  canReadRole,
-  validateRoleSearch,
-  roleController.searchRoles
-);
-
 // Update role
-router.patch('/:id', 
+router.patch('/:id',
   validateRoleId,
   canUpdateRole,
   validateRoleUpdate,
@@ -62,17 +63,20 @@ router.patch('/:id',
 );
 
 // Activate role
-router.post('/:id/activate', 
+router.post('/:id/activate',
   validateRoleId,
   canUpdateRole,
   roleController.activateRole
 );
 
 // Deactivate role
-router.post('/:id/deactivate', 
+router.post('/:id/deactivate',
   validateRoleId,
   canUpdateRole,
   roleController.deactivateRole
 );
+
+// Error handler for this router
+router.use(errorHandler);
 
 export default router;
