@@ -1,7 +1,6 @@
 // src/controllers/objectif.controller.js
 
-import { asyncHandler } from '../helpers/asyncHandler.js';
-import { mapSqlError } from '../helpers/sqlErrorMapper.js';
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as objectifService from '../services/objectif.service.js';
 
 /**
@@ -44,15 +43,14 @@ import * as objectifService from '../services/objectif.service.js';
  *       201: { description: Created }
  *       400: { description: Validation error }
  */
-export const createObjectif = asyncHandler(async (req, res) => {
+export const createObjectif = async (req, res, next) => {
   try {
     const result = await objectifService.createObjectif(req.body);
-    res.status(201).json({ data: result });
+    sendSuccess(res, result, 'Objectif created successfully', 201);
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -71,12 +69,20 @@ export const createObjectif = asyncHandler(async (req, res) => {
  *       200: { description: Found }
  *       404: { description: Not found }
  */
-export const getObjectifById = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const row = await objectifService.getActiveObjectifById(id);
-  if (!row) return res.status(404).json({ error: 'Objectif not found' });
-  res.json({ data: row });
-});
+export const getObjectifById = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const row = await objectifService.getActiveObjectifById(id);
+    
+    if (!row) {
+      return next(new AppError('Objectif not found', 404));
+    }
+    
+    sendSuccess(res, row, 'Objectif retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -113,20 +119,23 @@ export const getObjectifById = asyncHandler(async (req, res) => {
  *       200:
  *         description: Paginated list of objectifs
  */
-export const listActiveObjectifs = asyncHandler(async (req, res) => {
-  const filters = {
-    userId: req.query.userId,
-    periodeId: req.query.periodeId,
-    groupementId: req.query.groupementId,
-    siteId: req.query.siteId
-  };
-  
-  const page = Number(req.query.page || 1);
-  const pageSize = Number(req.query.pageSize || 10);
-  
-  const result = await objectifService.listActiveObjectifs(filters, page, pageSize);
-  res.json(result);
-});
+export const listActiveObjectifs = async (req, res, next) => {
+  try {
+    const filters = {
+      userId: req.query.userId,
+      periodeId: req.query.periodeId,
+      groupementId: req.query.groupementId,
+      siteId: req.query.siteId
+    };
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await objectifService.listActiveObjectifs(filters, page, pageSize);
+    sendSuccess(res, result, 'Active objectifs retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -152,16 +161,21 @@ export const listActiveObjectifs = asyncHandler(async (req, res) => {
  *     responses:
  *       200: { description: Enriched list }
  */
-export const listObjectifsView = asyncHandler(async (req, res) => {
-  const filters = {
-    userId: req.query.userId,
-    periodeId: req.query.periodeId,
-    groupementId: req.query.groupementId,
-    siteId: req.query.siteId
-  };
-  const rows = await objectifService.listObjectifsView(filters);
-  res.json({ data: rows });
-});
+export const listObjectifsView = async (req, res, next) => {
+  try {
+    const filters = {
+      userId: req.query.userId,
+      periodeId: req.query.periodeId,
+      groupementId: req.query.groupementId,
+      siteId: req.query.siteId
+    };
+    
+    const rows = await objectifService.listObjectifsView(filters);
+    sendSuccess(res, rows, 'Objectifs view retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -179,18 +193,21 @@ export const listObjectifsView = asyncHandler(async (req, res) => {
  *     responses:
  *       200: { description: Updated }
  */
-export const updateObjectif = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
-  const updatedUserId = req.user?.id || null;
+export const updateObjectif = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
+    const updatedUserId = req.user?.id || null;
     const result = await objectifService.updateObjectif(id, req.body, updatedUserId);
-    if (!result) return res.status(404).json({ error: 'Objectif not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Objectif not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Objectif updated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -199,17 +216,20 @@ export const updateObjectif = asyncHandler(async (req, res) => {
  *     summary: Activate Objectif
  *     tags: [Objectifs]
  */
-export const activateObjectif = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const activateObjectif = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await objectifService.activateObjectif(id);
-    if (!result) return res.status(404).json({ error: 'Objectif not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Objectif not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Objectif activated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -218,14 +238,17 @@ export const activateObjectif = asyncHandler(async (req, res) => {
  *     summary: Deactivate Objectif
  *     tags: [Objectifs]
  */
-export const deactivateObjectif = asyncHandler(async (req, res) => {
-  const id = Number(req.params.id);
+export const deactivateObjectif = async (req, res, next) => {
   try {
+    const id = Number(req.params.id);
     const result = await objectifService.deactivateObjectif(id);
-    if (!result) return res.status(404).json({ error: 'Objectif not found' });
-    res.json({ data: result });
+    
+    if (!result) {
+      return next(new AppError('Objectif not found', 404));
+    }
+    
+    sendSuccess(res, result, 'Objectif deactivated successfully');
   } catch (err) {
-    const { status, message } = mapSqlError(err);
-    res.status(status).json({ error: message });
+    next(new AppError(err.message, err.statusCode || 500));
   }
-});
+};
