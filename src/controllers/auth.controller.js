@@ -1,10 +1,9 @@
-// src/controllers/authController.js
-import { asyncHandler } from '../helpers/asyncHandler.js';
+// src/controllers/auth.controller.js
+
+import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import { signToken } from '../helpers/jwt.js';
-import { sendError } from '../helpers/response.js';
 import { mapSqlError } from '../helpers/sqlErrorMapper.js';
 import * as authService from '../services/auth.service.js';
-import { verifyPassword } from '../helpers/password.js';
 
 /**
  * @openapi
@@ -71,11 +70,11 @@ import { verifyPassword } from '../helpers/password.js';
  *       '500':
  *         description: Server / stored-proc error
  */
-export const register = asyncHandler(async (req, res) => {
+export const register = async (req, res, next) => {
   const { username, email, full_name, password, idUserSite = null, actif = true } = req.body || {};
 
   if (!username || !email || !full_name || !password) {
-    return sendError(res, 400, { error: 'username, email, full_name and password are required' });
+    return next(new AppError('username, email, full_name and password are required', 400));
   }
 
   try {
@@ -89,18 +88,18 @@ export const register = asyncHandler(async (req, res) => {
     });
 
     if (!createdRow || typeof createdRow.NewUserId === 'undefined') {
-      // Unexpected stored-proc shape
       console.error('sp_CreateUser returned unexpected result:', { createdRow });
-      return sendError(res, 500, { error: 'User creation failed (no id returned)' });
+      return next(new AppError('User creation failed (no id returned)', 500));
     }
 
     const newUserId = createdRow.NewUserId;
 
-    // fetch roles & perms (best-effort; failures fall back to empty arrays)
+    // Fetch roles & perms (best-effort; failures fall back to empty arrays)
     const rolesRows = await authService.getRolesForUser(newUserId).catch(err => {
       console.warn('getRolesForUser failed for new user', newUserId, err?.message || err);
       return [];
     });
+
     const permsRows = await authService.getPermsForUser(newUserId).catch(err => {
       console.warn('getPermsForUser failed for new user', newUserId, err?.message || err);
       return [];
@@ -116,7 +115,7 @@ export const register = asyncHandler(async (req, res) => {
       permissions: permNames
     });
 
-    return res.status(201).json({
+    const responseData = {
       token,
       user: {
         id: newUserId,
@@ -127,20 +126,24 @@ export const register = asyncHandler(async (req, res) => {
         idUserSite
       },
       roles: roleNames,
-      permissions: permNames,
-      message: createdRow?.Message || 'User created successfully'
-    });
+      permissions: permNames
+    };
+
+    sendSuccess(res, responseData, createdRow?.Message || 'User created successfully', 201);
   } catch (err) {
     const { status, message } = mapSqlError(err);
-    // log full error for debugging (strip in production or use logger)
     console.error('sp_CreateUser error:', {
       message,
       original: err?.original || err
     });
-    const payload = process.env.NODE_ENV !== 'production' ? { error: message } : { error: status === 500 ? 'Registration failed' : message };
-    return sendError(res, status || 500, payload);
+
+    const errorMessage = process.env.NODE_ENV !== 'production' && status === 500
+      ? 'Registration failed'
+      : message;
+    
+    next(new AppError(errorMessage, status || 500));
   }
-});
+};
 
 /**
  * @openapi
@@ -173,27 +176,37 @@ export const register = asyncHandler(async (req, res) => {
  *       '401':
  *         description: Invalid credentials
  */
-export const login = async (req, res) => {
-  const { username, password } = req.body;
+export const login = async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
 
-  const user = await authService.findUserByUsername(username);
-  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-
-  const ok = await authService.checkPassword(password, user.password);
-  if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-
-  const token = signToken(user.id); // <--- must be numeric id
-
-  return res.json({
-    token,
-    user: {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      full_name: user.full_name,
-      actif: user.actif
+    const user = await authService.findUserByUsername(username);
+    if (!user) {
+      return next(new AppError('Invalid credentials', 401));
     }
-  });
+
+    const ok = await authService.checkPassword(password, user.password);
+    if (!ok) {
+      return next(new AppError('Invalid credentials', 401));
+    }
+
+    const token = signToken(user.id);
+
+    const responseData = {
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        full_name: user.full_name,
+        actif: user.actif
+      }
+    };
+
+    sendSuccess(res, responseData, 'Login successful');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
 };
 
 /**
@@ -218,13 +231,20 @@ export const login = async (req, res) => {
  *       '401':
  *         description: Unauthorized
  */
-export const me = asyncHandler(async (req, res) => {
-  const userId = req.user?.id;
-  if (!userId) return sendError(res, 401, { error: 'Unauthorized' });
+export const me = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return next(new AppError('Unauthorized', 401));
+    }
 
-  const profile = await authService.getUserById(userId);
-  return res.json({ data: profile || null });
-});
+    const profile = await authService.getUserById(userId);
+    sendSuccess(res, profile || null, 'Profile retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -248,13 +268,20 @@ export const me = asyncHandler(async (req, res) => {
  *       '401':
  *         description: Unauthorized
  */
-export const myRoles = asyncHandler(async (req, res) => {
-  const userId = req.user?.id;
-  if (!userId) return sendError(res, 401, { error: 'Unauthorized' });
+export const myRoles = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return next(new AppError('Unauthorized', 401));
+    }
 
-  const roles = await authService.getRolesForUser(userId);
-  return res.json({ data: roles });
-});
+    const roles = await authService.getRolesForUser(userId);
+    sendSuccess(res, roles, 'Roles retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -278,13 +305,20 @@ export const myRoles = asyncHandler(async (req, res) => {
  *       '401':
  *         description: Unauthorized
  */
-export const myPermissions = asyncHandler(async (req, res) => {
-  const userId = req.user?.id;
-  if (!userId) return sendError(res, 401, { error: 'Unauthorized' });
+export const myPermissions = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return next(new AppError('Unauthorized', 401));
+    }
 
-  const perms = await authService.getPermsForUser(userId);
-  return res.json({ data: perms });
-});
+    const perms = await authService.getPermsForUser(userId);
+    sendSuccess(res, perms, 'Permissions retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -346,74 +380,70 @@ export const myPermissions = asyncHandler(async (req, res) => {
  *       '500':
  *         description: Server error
  */
-export const createUserComplete = asyncHandler(async (req, res) => {
-    const { 
-        full_name, 
-        email, 
-        username, 
-        password, 
-        groupement_name, 
-        site_id,
-        role_ids = [],
-        permission_ids = []
-    } = req.body || {};
+export const createUserComplete = async (req, res, next) => {
+  const {
+    full_name,
+    email,
+    username,
+    password,
+    groupement_name,
+    site_id,
+    role_ids = [],
+    permission_ids = []
+  } = req.body || {};
 
-    if (!full_name || !email || !username || !password || !groupement_name || !site_id) {
-        return sendError(res, 400, { 
-            error: 'full_name, email, username, password, groupement_name, and site_id are required' 
-        });
+  if (!full_name || !email || !username || !password || !groupement_name || !site_id) {
+    return next(new AppError('full_name, email, username, password, groupement_name, and site_id are required', 400));
+  }
+
+  if (!['filiale', 'succursale'].includes(groupement_name.toLowerCase())) {
+    return next(new AppError('groupement_name must be either "filiale" or "succursale"', 400));
+  }
+
+  try {
+    const { createdRow } = await authService.createUserWithRolePermissionsAndSite({
+      full_name,
+      email,
+      username,
+      password,
+      groupement_name: groupement_name.toLowerCase(),
+      site_id: parseInt(site_id),
+      role_ids: Array.isArray(role_ids) ? role_ids.map(id => parseInt(id)) : [],
+      permission_ids: Array.isArray(permission_ids) ? permission_ids.map(id => parseInt(id)) : []
+    });
+
+    if (!createdRow || typeof createdRow.UserId === 'undefined') {
+      console.error('sp_CreateUserWithRolePermissionsAndSite returned unexpected result:', { createdRow });
+      return next(new AppError('User creation failed', 500));
     }
 
-    if (!['filiale', 'succursale'].includes(groupement_name.toLowerCase())) {
-        return sendError(res, 400, { 
-            error: 'groupement_name must be either "filiale" or "succursale"' 
-        });
-    }
+    // Fetch complete user information
+    const userCompleteInfo = await authService.getUserCompleteInfoById(createdRow.UserId);
 
-    try {
-        const { createdRow } = await authService.createUserWithRolePermissionsAndSite({
-            full_name,
-            email,
-            username,
-            password,
-            groupement_name: groupement_name.toLowerCase(),
-            site_id: parseInt(site_id),
-            role_ids: Array.isArray(role_ids) ? role_ids.map(id => parseInt(id)) : [],
-            permission_ids: Array.isArray(permission_ids) ? permission_ids.map(id => parseInt(id)) : []
-        });
+    const token = signToken({
+      id: createdRow.UserId,
+      username,
+      roles: userCompleteInfo?.UserRoles?.split(', ') || [],
+      permissions: userCompleteInfo?.UserPermissions?.split(', ') || []
+    });
 
-        if (!createdRow || typeof createdRow.UserId === 'undefined') {
-            console.error('sp_CreateUserWithRolePermissionsAndSite returned unexpected result:', { createdRow });
-            return sendError(res, 500, { error: 'User creation failed' });
-        }
+    const responseData = {
+      token,
+      user: userCompleteInfo
+    };
 
-        // Fetch complete user information
-        const userCompleteInfo = await authService.getUserCompleteInfoById(createdRow.UserId);
-
-        const token = signToken({
-            id: createdRow.UserId,
-            username,
-            roles: userCompleteInfo?.UserRoles?.split(', ') || [],
-            permissions: userCompleteInfo?.UserPermissions?.split(', ') || []
-        });
-
-        return res.status(201).json({
-            token,
-            user: userCompleteInfo,
-            message: createdRow.Message || 'User created successfully'
-        });
-
-    } catch (err) {
-        const { status, message } = mapSqlError(err);
-        console.error('createUserComplete error:', { message, original: err?.original || err });
-        
-        const payload = process.env.NODE_ENV !== 'production' 
-            ? { error: message } 
-            : { error: status === 500 ? 'User creation failed' : message };
-            
-        return sendError(res, status || 500, payload);
-    }
-});
+    sendSuccess(res, responseData, createdRow.Message || 'User created successfully', 201);
+  } catch (err) {
+    const { status, message } = mapSqlError(err);
+    console.error('createUserComplete error:', { message, original: err?.original || err });
+    
+    const errorMessage = process.env.NODE_ENV !== 'production' && status === 500
+      ? 'User creation failed'
+      : message;
+    
+    next(new AppError(errorMessage, status || 500));
+  }
+};
 
 /**
  * @openapi
@@ -440,24 +470,29 @@ export const createUserComplete = asyncHandler(async (req, res) => {
  *       '200':
  *         description: List of users with complete information
  */
-export const getAllUsers = asyncHandler(async (req, res) => {
+export const getAllUsers = async (req, res, next) => {
+  try {
     const { site_type, active_only } = req.query;
-    
     let users;
-    
+
     if (active_only === 'true') {
-        users = await authService.getActiveUsersCompleteInfo();
+      users = await authService.getActiveUsersCompleteInfo();
     } else if (site_type) {
-        users = await authService.getUsersBySiteType(site_type);
+      users = await authService.getUsersBySiteType(site_type);
     } else {
-        users = await authService.getAllUsersCompleteInfo();
+      users = await authService.getAllUsersCompleteInfo();
     }
-    
-    return res.json({ 
-        data: users,
-        total: users.length 
-    });
-});
+
+    const responseData = {
+      data: users,
+      total: users.length
+    };
+
+    sendSuccess(res, responseData, 'Users retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -481,21 +516,25 @@ export const getAllUsers = asyncHandler(async (req, res) => {
  *       '404':
  *         description: User not found
  */
-export const getUserCompleteInfo = asyncHandler(async (req, res) => {
+export const getUserCompleteInfo = async (req, res, next) => {
+  try {
     const userId = parseInt(req.params.id);
-    
+
     if (!userId || userId <= 0) {
-        return sendError(res, 400, { error: 'Valid user ID is required' });
+      return next(new AppError('Valid user ID is required', 400));
     }
-    
+
     const user = await authService.getUserCompleteInfoById(userId);
-    
+
     if (!user) {
-        return sendError(res, 404, { error: 'User not found' });
+      return next(new AppError('User not found', 404));
     }
-    
-    return res.json({ data: user });
-});
+
+    sendSuccess(res, user, 'User information retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
 
 /**
  * @openapi
@@ -510,7 +549,11 @@ export const getUserCompleteInfo = asyncHandler(async (req, res) => {
  *       '200':
  *         description: Available sites (filiales, succursales, groupements)
  */
-export const getAvailableSites = asyncHandler(async (req, res) => {
+export const getAvailableSites = async (req, res, next) => {
+  try {
     const sites = await authService.getAvailableSites();
-    return res.json({ data: sites });
-});
+    sendSuccess(res, sites, 'Available sites retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
