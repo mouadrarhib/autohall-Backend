@@ -688,6 +688,31 @@ export const removeUserPermission = async (req, res, next) => {
  *     responses:
  *       200:
  *         description: Permission check completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: User has this permission
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     hasPermission:
+ *                       type: boolean
+ *                       example: true
+ *                     idUser:
+ *                       type: integer
+ *                       example: 1
+ *                     permissionName:
+ *                       type: string
+ *                       example: MODELE_READ
+ *       404:
+ *         description: User or permission not found
  *       400:
  *         description: Validation error
  */
@@ -695,8 +720,28 @@ export const userHasPermissionByName = async (req, res, next) => {
   try {
     const idUser = Number(req.params.idUser);
     const { permissionName } = req.params;
+
+    // Check if permission exists first
+    const permissionExists = await permissionService.getPermissionByName(permissionName);
+    if (!permissionExists) {
+      return next(new AppError(`Permission '${permissionName}' does not exist`, 404));
+    }
+
+    // Check if user has the permission
     const result = await permissionService.userHasPermissionByName(idUser, permissionName);
-    sendSuccess(res, result, 'Permission check completed successfully');
+    
+    // Create a more descriptive response
+    const response = {
+      hasPermission: !!result.hasPermission,
+      idUser: idUser,
+      permissionName: permissionName
+    };
+
+    const message = result.hasPermission 
+      ? `User has the permission '${permissionName}'`
+      : `User does not have the permission '${permissionName}'`;
+
+    sendSuccess(res, response, message);
   } catch (err) {
     next(new AppError(err.message, 500));
   }
