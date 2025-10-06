@@ -391,6 +391,40 @@ export const listUsersByPermission = async (req, res, next) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/permissions/user/{idUser}/add:
+ *   post:
+ *     summary: Add permission to a user
+ *     tags: [Permissions]
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idPermission
+ *             properties:
+ *               idPermission:
+ *                 type: integer
+ *                 example: 1
+ *     responses:
+ *       201:
+ *         description: Permission added successfully
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Permission already exists for user
+ */
 export const addUserPermission = async (req, res, next) => {
   try {
     const idUser = Number(req.params.idUser);
@@ -402,6 +436,38 @@ export const addUserPermission = async (req, res, next) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/permissions/user/{idUser}/activate:
+ *   post:
+ *     summary: Activate a user's permission
+ *     tags: [Permissions]
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idPermission
+ *             properties:
+ *               idPermission:
+ *                 type: integer
+ *                 example: 1
+ *     responses:
+ *       200:
+ *         description: User permission activated successfully
+ *       404:
+ *         description: User permission not found
+ */
 export const activateUserPermission = async (req, res, next) => {
   try {
     const idUser = Number(req.params.idUser);
@@ -413,6 +479,38 @@ export const activateUserPermission = async (req, res, next) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/permissions/user/{idUser}/deactivate:
+ *   post:
+ *     summary: Deactivate a user's permission
+ *     tags: [Permissions]
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idPermission
+ *             properties:
+ *               idPermission:
+ *                 type: integer
+ *                 example: 1
+ *     responses:
+ *       200:
+ *         description: User permission deactivated successfully
+ *       404:
+ *         description: User permission not found
+ */
 export const deactivateUserPermission = async (req, res, next) => {
   try {
     const idUser = Number(req.params.idUser);
@@ -424,6 +522,42 @@ export const deactivateUserPermission = async (req, res, next) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/permissions/user/{idUser}/remove:
+ *   delete:
+ *     summary: Remove permission from a user (soft or hard delete)
+ *     tags: [Permissions]
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idPermission
+ *             properties:
+ *               idPermission:
+ *                 type: integer
+ *                 example: 1
+ *               hardDelete:
+ *                 type: boolean
+ *                 default: false
+ *                 description: If true, permanently delete the record; if false, soft delete
+ *     responses:
+ *       200:
+ *         description: User permission removed successfully
+ *       404:
+ *         description: User permission not found
+ */
 export const removeUserPermission = async (req, res, next) => {
   try {
     const idUser = Number(req.params.idUser);
@@ -436,6 +570,32 @@ export const removeUserPermission = async (req, res, next) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/permissions/user/{idUser}/check/{permissionName}:
+ *   get:
+ *     summary: Check if user has a specific permission by name
+ *     tags: [Permissions]
+ *     parameters:
+ *       - in: path
+ *         name: idUser
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID of the user
+ *       - in: path
+ *         name: permissionName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Name of the permission to check
+ *     responses:
+ *       200:
+ *         description: Permission check result (true/false)
+ *       400:
+ *         description: Validation error
+ */
 export const userHasPermissionByName = async (req, res, next) => {
   try {
     const idUser = Number(req.params.idUser);
@@ -447,6 +607,40 @@ export const userHasPermissionByName = async (req, res, next) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/permissions/{id}/set-active:
+ *   patch:
+ *     summary: Set permission active status (alternative to activate/deactivate)
+ *     tags: [Permissions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID of the permission
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - active
+ *             properties:
+ *               active:
+ *                 type: boolean
+ *                 description: Set to true to activate or false to deactivate
+ *     responses:
+ *       200:
+ *         description: Permission active status updated successfully
+ *       400:
+ *         description: Missing active field in request body
+ *       404:
+ *         description: Permission not found
+ */
 export const setPermissionActive = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
