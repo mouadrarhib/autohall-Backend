@@ -138,3 +138,5 @@ export async function deactivateObjectif(id) {
   });
   return getFirstResult(rows);
 }
+
+

@@ -163,19 +163,33 @@ export const listActiveObjectifs = async (req, res, next) => {
  */
 export const listObjectifsView = async (req, res, next) => {
   try {
-    const filters = {
-      userId: req.query.userId,
-      periodeId: req.query.periodeId,
-      groupementId: req.query.groupementId,
-      siteId: req.query.siteId
-    };
+    // Filter out undefined values and convert strings to numbers
+    const filters = {};
     
+    if (req.query.userId) {
+      filters.userId = Number(req.query.userId);
+    }
+    
+    if (req.query.periodeId) {
+      filters.periodeId = Number(req.query.periodeId);
+    }
+    
+    if (req.query.groupementId) {
+      filters.groupementId = Number(req.query.groupementId);
+    }
+    
+    if (req.query.siteId) {
+      filters.siteId = Number(req.query.siteId);
+    }
+
     const rows = await objectifService.listObjectifsView(filters);
     sendSuccess(res, rows, 'Objectifs view retrieved successfully');
   } catch (err) {
     next(new AppError(err.message, 500));
   }
 };
+
+
 
 /**
  * @openapi

@@ -481,12 +481,12 @@ export const SQL = {
     // View query (you may want to add pagination here too if needed)
     OBJECTIF_VIEW: `
       SELECT * FROM dbo.V_Objectif
-      WHERE (@userId IS NULL OR createdUserId = @userId)
-        AND (@periodeId IS NULL OR periodeID = @periodeId)
-        AND (@groupementId IS NULL OR groupementID = @groupementId)
-        AND (@siteId IS NULL OR SiteID = @siteId)
+      WHERE (:userId IS NULL OR createdUserId = :userId)
+      AND (:periodeId IS NULL OR periodeID = :periodeId)
+      AND (:groupementId IS NULL OR groupementID = :groupementId)
+      AND (:siteId IS NULL OR SiteID = :siteId)
       ORDER BY periodeID DESC, createdUserId ASC, id DESC
-    `
+      `
   },
 
 };
