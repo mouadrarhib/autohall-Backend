@@ -184,14 +184,16 @@ export async function setUserPermissionActive(idUser, idPermission, active) {
 }
 
 export async function userHasPermissionByName(idUser, permissionName) {
-  try {
-    const rows = await sequelize.query(SQL.USER_PERMISSION.UP_HAS_BY_NAME, {
-      replacements: { idUser: Number(idUser), permissionName },
-      type: QueryTypes.SELECT
-    });
-    return rows[0] || { hasPermission: 0 };
-  } catch (error) {
-    console.error('Error checking user permission:', error);
-    return { hasPermission: 0 };
-  }
+  const rows = await sequelize.query(SQL.USER_PERMISSION.UP_HAS_BY_NAME, {
+    replacements: { idUser: Number(idUser), permissionName },
+    type: QueryTypes.SELECT
+  });
+  
+  // Return the result with boolean conversion
+  const result = rows[0] || { hasPermission: 0 };
+  
+  return {
+    hasPermission: result.hasPermission === 1 || result.hasPermission === true
+  };
 }
+
