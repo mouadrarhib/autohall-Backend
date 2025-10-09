@@ -565,3 +565,33 @@ export const getAvailableSites = async (req, res, next) => {
     next(new AppError(err.message, 500));
   }
 };
+
+/**
+ * @openapi
+ * /api/auth/logout:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Logout user and clear authentication cookie
+ *     responses:
+ *       '200':
+ *         description: Logout successful
+ *       '500':
+ *         description: Server error
+ */
+export const logout = async (req, res, next) => {
+  try {
+    // Clear the authentication cookie
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    });
+    
+    sendSuccess(res, null, 'Logout successful');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
+
