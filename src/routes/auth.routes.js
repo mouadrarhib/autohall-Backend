@@ -10,7 +10,8 @@ import {
   createUserComplete,
   getAllUsers,
   getUserCompleteInfo,
-  getAvailableSites
+  getAvailableSites,
+  logout
 } from '../controllers/auth.controller.js';
 import { isAuth } from '../middlewares/isAuth.js';
 import { errorHandler } from '../middlewares/responseHandler.js';
@@ -28,6 +29,7 @@ const r = Router();
 // Public/self endpoints (no admin permission required)
 r.post('/register', validateUserRegistration, register);
 r.post('/login', validateUserLogin, login);
+r.post('/logout',isAuth, logout);
 r.get('/me', isAuth, me);
 r.get('/me/roles', isAuth, myRoles);
 r.get('/me/permissions', isAuth, myPermissions);
