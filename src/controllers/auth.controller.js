@@ -179,21 +179,28 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-
     const user = await authService.findUserByUsername(username);
+    
     if (!user) {
       return next(new AppError('Invalid credentials', 401));
     }
-
+    
     const ok = await authService.checkPassword(password, user.password);
     if (!ok) {
       return next(new AppError('Invalid credentials', 401));
     }
-
+    
     const token = signToken(user.id);
-
+    
+    // Set JWT in httpOnly cookie
+    res.cookie('token', token, {
+      httpOnly: true,      // Prevents client-side JS from accessing the cookie
+      secure: process.env.NODE_ENV === 'production',  // Only send over HTTPS in production
+      sameSite: 'strict',  // CSRF protection
+      maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days in milliseconds
+    });
+    
     const responseData = {
-      token,
       user: {
         id: user.id,
         username: user.username,
@@ -202,12 +209,13 @@ export const login = async (req, res, next) => {
         actif: user.actif
       }
     };
-
+    
     sendSuccess(res, responseData, 'Login successful');
   } catch (err) {
     next(new AppError(err.message, 500));
   }
 };
+
 
 /**
  * @openapi
