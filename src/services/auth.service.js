@@ -5,6 +5,8 @@ import { sequelize } from '../config/database.js';
 import { SQL } from '../sql/snippets.js';
 import { verifyPassword } from '../helpers/password.js';
 import { QueryTypes } from 'sequelize';
+import { prepareStoredProcParams } from '../helpers/databaseHelpers.js';
+import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 /**
  * createUser - uses your CREATE_USER proc (expects @username, @email, @password)
@@ -56,20 +58,49 @@ export async function getUserById(id) {
   return rows[0] || null;
 }
 
-/**
- * getRolesForUser - currently no roles stored-proc available in DB.
- * Return an empty array for now (controller expects an array).
- */
-export async function getRolesForUser(userId) {
-  return [];
+export async function getRolesForUser(userId, includeInactive = 0, page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    userId: Number(userId),
+    includeInactive: includeInactive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
+  });
+  
+  try {
+    const rows = await sequelize.query(SQL.USER_ACCESS.GET_USER_ROLES, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in getRolesForUser service:', error);
+    throw error;
+  }
 }
 
 /**
- * getPermsForUser - same as roles: return empty array until you add the proc.
+ * getPermsForUser - fetch permissions using usp_GetUserPermissions with pagination
  */
-export async function getPermsForUser(userId) {
-  return [];
+export async function getPermsForUser(userId, includeInactive = 0, page = 1, pageSize = 10) {
+  const params = prepareStoredProcParams({
+    userId: Number(userId),
+    includeInactive: includeInactive ? 1 : 0,
+    pageNumber: Number(page),
+    pageSize: Number(pageSize)
+  });
+  
+  try {
+    const rows = await sequelize.query(SQL.USER_ACCESS.GET_USER_PERMISSIONS, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return processPaginatedResult(rows, page, pageSize);
+  } catch (error) {
+    console.error('Error in getPermsForUser service:', error);
+    throw error;
+  }
 }
+
 
 /**
  * checkPassword - wrapper for verifyPassword (handles bcrypt + legacy)

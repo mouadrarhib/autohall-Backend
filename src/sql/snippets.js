@@ -489,4 +489,25 @@ export const SQL = {
       `
   },
 
+  USER_ACCESS: {
+    // Updated with pagination
+    GET_USER_PERMISSIONS: `
+      EXEC dbo.usp_GetUserPermissions 
+      @UserId=:userId, 
+      @IncludeInactive=:includeInactive,
+      @pageNumber=:pageNumber,
+      @pageSize=:pageSize
+    `,
+    
+    // Updated with pagination
+    GET_USER_ROLES: `
+      EXEC dbo.usp_GetUserRoles 
+      @UserId=:userId, 
+      @IncludeInactive=:includeInactive,
+      @pageNumber=:pageNumber,
+      @pageSize=:pageSize
+    `
+  },
+
+
 };
