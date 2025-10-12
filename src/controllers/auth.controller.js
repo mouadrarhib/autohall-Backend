@@ -258,34 +258,48 @@ export const me = async (req, res, next) => {
  * @openapi
  * /api/auth/me/roles:
  *   get:
- *     tags:
- *       - Auth
- *     summary: List current user's roles
+ *     tags: [Auth]
+ *     summary: Get roles for the authenticated user with pagination
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: includeInactive
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
- *       '200':
- *         description: Roles list
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *       '401':
+ *       200:
+ *         description: Paginated roles for the user
+ *       401:
  *         description: Unauthorized
  */
 export const myRoles = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    
     if (!userId) {
       return next(new AppError('Unauthorized', 401));
     }
-
-    const roles = await authService.getRolesForUser(userId);
-    sendSuccess(res, roles, 'Roles retrieved successfully');
+    
+    // Extract pagination parameters from query
+    const includeInactive = req.query.includeInactive === 'true' ? 1 : 0;
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    // Call service with parameters (service handles prepareStoredProcParams)
+    const result = await authService.getRolesForUser(userId, includeInactive, page, pageSize);
+    
+    sendSuccess(res, result, 'Roles retrieved successfully');
   } catch (err) {
     next(new AppError(err.message, 500));
   }
@@ -295,34 +309,48 @@ export const myRoles = async (req, res, next) => {
  * @openapi
  * /api/auth/me/permissions:
  *   get:
- *     tags:
- *       - Auth
- *     summary: List current user's permissions
+ *     tags: [Auth]
+ *     summary: Get permissions for the authenticated user with pagination
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: includeInactive
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
- *       '200':
- *         description: Permissions list
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *       '401':
+ *       200:
+ *         description: Paginated permissions for the user
+ *       401:
  *         description: Unauthorized
  */
 export const myPermissions = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    
     if (!userId) {
       return next(new AppError('Unauthorized', 401));
     }
-
-    const perms = await authService.getPermsForUser(userId);
-    sendSuccess(res, perms, 'Permissions retrieved successfully');
+    
+    // Extract pagination parameters from query
+    const includeInactive = req.query.includeInactive === 'true' ? 1 : 0;
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    // Call service with parameters (service handles prepareStoredProcParams)
+    const result = await authService.getPermsForUser(userId, includeInactive, page, pageSize);
+    
+    sendSuccess(res, result, 'Permissions retrieved successfully');
   } catch (err) {
     next(new AppError(err.message, 500));
   }
