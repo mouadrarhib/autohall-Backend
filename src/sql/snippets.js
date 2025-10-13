@@ -509,5 +509,30 @@ export const SQL = {
     `
   },
 
+  USER_ROLE: {
+    // single link ops
+    LINK: 'EXEC dbo.usp_UserRole_Link @UserId=:userId, @RoleId=:roleId, @Active=:active',
+    UNLINK: 'EXEC dbo.usp_UserRole_Unlink @UserId=:userId, @RoleId=:roleId',
+    SET_ACTIVE: 'EXEC dbo.usp_UserRole_SetActive @UserId=:userId, @RoleId=:roleId, @Active=:active',
+    TOGGLE: 'EXEC dbo.usp_UserRole_Toggle @UserId=:userId, @RoleId=:roleId',
+
+    // lookups
+    LIST_ROLES_BY_USER: 'EXEC dbo.usp_UserRole_ListRolesByUser @UserId=:userId, @ActiveOnly=:activeOnly',
+    LIST_USERS_BY_ROLE: 'EXEC dbo.usp_UserRole_ListUsersByRole @RoleId=:roleId, @ActiveOnly=:activeOnly',
+
+    // bulk
+    BULK_LINK_ROLES_TO_USER: 'EXEC dbo.usp_UserRole_BulkLinkRolesToUser @UserId=:userId, @RoleIds=:roleIds, @Active=:active',
+    BULK_LINK_USERS_TO_ROLE: 'EXEC dbo.usp_UserRole_BulkLinkUsersToRole @RoleId=:roleId, @UserIds=:userIds, @Active=:active',
+    BULK_SET_ACTIVE_BY_USER: 'EXEC dbo.usp_UserRole_BulkSetActiveByUser @UserId=:userId, @RoleIds=:roleIds, @Active=:active',
+    BULK_SET_ACTIVE_BY_ROLE: 'EXEC dbo.usp_UserRole_BulkSetActiveByRole @RoleId=:roleId, @UserIds=:userIds, @Active=:active',
+
+    // sync
+    SYNC_ROLES_FOR_USER: 'EXEC dbo.usp_UserRole_SyncRolesForUser @UserId=:userId, @RoleIds=:roleIds, @Active=:active',
+    SYNC_USERS_FOR_ROLE: 'EXEC dbo.usp_UserRole_SyncUsersForRole @RoleId=:roleId, @UserIds=:userIds, @Active=:active',
+
+    // checks/stats
+    HAS_ROLE: 'EXEC dbo.usp_UserRole_HasRole @UserId=:userId, @RoleId=:roleId, @ActiveOnly=:activeOnly',
+    COUNT_USERS_FOR_ROLE: 'EXEC dbo.usp_UserRole_CountUsersForRole @RoleId=:roleId, @ActiveOnly=:activeOnly'
+  }
 
 };

@@ -16,8 +16,7 @@ import periodeRoute from './periode.routes.js';
 import typeVenteRoutes from './typevente.routes.js';
 import typeObjectifRoutes from './typeobjectif.routes.js';
 import objectifRoutes from './objectif.routes.js';
-
-
+import userRoleRoutes from './userRole.routes.js';
 
 
 const router = Router();
@@ -40,6 +39,7 @@ router.use('/periode', periodeRoute);
 router.use('/type-ventes', typeVenteRoutes);
 router.use('/type-objectifs', typeObjectifRoutes);
 router.use('/objectifs', objectifRoutes);
+router.use('/api/user-roles', userRoleRoutes);
 
 
 
