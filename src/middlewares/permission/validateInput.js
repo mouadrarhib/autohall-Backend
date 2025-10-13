@@ -5,6 +5,8 @@
  */
 
 // Helper function to create validation middleware
+import { body, validationResult } from 'express-validator';
+
 const createValidator = (validationRules) => {
   return (req, res, next) => {
     const errors = {};
@@ -92,9 +94,25 @@ export const validateUserPermissionBody = createValidator({
   hardDelete: [rules.boolean]
 });
 
-export const validateSetActive = createValidator({
-  active: [rules.required, rules.boolean]
-});
+export const validateSetActive = [
+  // `exists` (with checkNull/Falsy) ensures the key is present even if it's false
+  body('active')
+    .exists({ checkNull: true })
+    .withMessage('active is required')
+    .isBoolean()
+    .withMessage('active must be a boolean')
+    .toBoolean(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: Object.fromEntries(errors.array().map(e => [e.path, e.msg])),
+      });
+    }
+    next();
+  },
+];
 
 // Query parameter validation for listPermissions
 export const validatePermissionQuery = (req, res, next) => {
