@@ -33,6 +33,9 @@ import * as marqueService from '../services/marque.service.js';
  *               idFiliale:
  *                 type: integer
  *                 example: 1
+ *               imageUrl:
+ *                 type: string
+ *                 example: "/uploads/brands/toyota-logo.png"
  *               active:
  *                 type: boolean
  *                 default: true
@@ -46,8 +49,8 @@ import * as marqueService from '../services/marque.service.js';
  */
 export const createMarque = async (req, res, next) => {
   try {
-    const { name, idFiliale, active = true } = req.body || {};
-    const result = await marqueService.createMarque(name, idFiliale, active);
+    const { name, idFiliale, imageUrl = null, active = true } = req.body || {};
+    const result = await marqueService.createMarque(name, idFiliale, imageUrl, active);
     sendSuccess(res, result, 'Marque created successfully', 201);
   } catch (err) {
     next(new AppError(err.message, err.statusCode || 500));
@@ -276,6 +279,8 @@ export const searchMarques = async (req, res, next) => {
  *                 type: string
  *               idFiliale:
  *                 type: integer
+ *               imageUrl:
+ *                 type: string
  *               active:
  *                 type: boolean
  *     responses:
@@ -287,8 +292,9 @@ export const searchMarques = async (req, res, next) => {
 export const updateMarque = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { name = null, idFiliale = null, active = null } = req.body || {};
-    const result = await marqueService.updateMarque(id, name, idFiliale, active);
+    const { name = null, idFiliale = null, imageUrl = null, active = null } = req.body || {};
+    
+    const result = await marqueService.updateMarque(id, name, idFiliale, imageUrl, active);
     
     if (!result) {
       return next(new AppError('Marque not found', 404));

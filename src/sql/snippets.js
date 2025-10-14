@@ -537,6 +537,28 @@ export const SQL = {
     RP_LIST: 'EXEC dbo.sp_RolePermission_List @page=:page, @pageSize=:pageSize, @activeOnly=:activeOnly',
   },
 
+  MARQUE: {
+  MARQUE_CREATE: `
+    DECLARE @NewId INT;
+    EXEC dbo.sp_Marque_Create
+      @Name=:name,
+      @IdFiliale=:idFiliale,
+      @ImageUrl=:imageUrl,
+      @Active=:active,
+      @NewMarqueId=@NewId OUTPUT;
+    SELECT id=@NewId;
+  `,
+  MARQUE_GET_BY_ID: 'EXEC dbo.sp_Marque_GetById @Id=:id',
+  MARQUE_LIST: 'EXEC dbo.sp_Marque_List @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MARQUE_LIST_BY_FILIALE: 'EXEC dbo.sp_Marque_ListByFiliale @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MARQUE_SEARCH: 'EXEC dbo.sp_Marque_Search @q=:q, @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MARQUE_UPDATE: 'EXEC dbo.sp_Marque_Update @Id=:id, @Name=:name, @IdFiliale=:idFiliale, @ImageUrl=:imageUrl, @Active=:active',
+  MARQUE_ACTIVATE: 'EXEC dbo.sp_Marque_Activate @Id=:id',
+  MARQUE_DEACTIVATE: 'EXEC dbo.sp_Marque_Deactivate @Id=:id',
+  MARQUE_DELETE: 'EXEC dbo.sp_Marque_Delete @Id=:id',
+},
+
+
 
 
 };
