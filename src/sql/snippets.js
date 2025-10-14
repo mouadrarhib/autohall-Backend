@@ -520,7 +520,23 @@ export const SQL = {
   UR_CHECK_ACCESS: 'EXEC dbo.sp_UserRole_CheckAccess @UserId=:userId, @RoleId=:roleId, @ActiveOnly=:activeOnly',
   UR_GET_STATS: 'EXEC dbo.sp_UserRole_GetStats @UserId=:userId, @RoleId=:roleId',
   UR_GET_ALL: 'EXEC dbo.sp_UserRole_GetAll @PageNumber=:pageNumber, @PageSize=:pageSize, @ActiveOnly=:activeOnly',
-},
+  },
+
+  // Add to src/sql/snippets.js in the SQL object
+
+  ROLE_PERMISSION: {
+    RP_ASSIGN: 'EXEC dbo.sp_RolePermission_Assign @idRole=:idRole, @idPermission=:idPermission, @active=:active',
+    RP_REMOVE: 'EXEC dbo.sp_RolePermission_Remove @idRole=:idRole, @idPermission=:idPermission',
+    RP_TOGGLE: 'EXEC dbo.sp_RolePermission_Toggle @idRole=:idRole, @idPermission=:idPermission',
+    RP_GET_PERMISSIONS_BY_ROLE: 'EXEC dbo.sp_RolePermission_GetPermissionsByRole @idRole=:idRole, @activeOnly=:activeOnly',
+    RP_GET_ROLES_BY_PERMISSION: 'EXEC dbo.sp_RolePermission_GetRolesByPermission @idPermission=:idPermission, @activeOnly=:activeOnly',
+    RP_SYNC_PERMISSIONS_FOR_ROLE: 'EXEC dbo.sp_RolePermission_SyncPermissionsForRole @idRole=:idRole, @permissionIds=:permissionIds, @active=:active',
+    RP_SYNC_ROLES_FOR_PERMISSION: 'EXEC dbo.sp_RolePermission_SyncRolesForPermission @idPermission=:idPermission, @roleIds=:roleIds, @active=:active',
+    RP_CHECK: 'EXEC dbo.sp_RolePermission_Check @idRole=:idRole, @idPermission=:idPermission, @activeOnly=:activeOnly',
+    RP_GET_STATS: 'EXEC dbo.sp_RolePermission_GetStats @idRole=:idRole, @idPermission=:idPermission',
+    RP_LIST: 'EXEC dbo.sp_RolePermission_List @page=:page, @pageSize=:pageSize, @activeOnly=:activeOnly',
+  },
+
 
 
 };
