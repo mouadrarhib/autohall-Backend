@@ -1,461 +1,384 @@
 // src/controllers/userRole.controller.js
+
 import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
 import * as userRoleService from '../services/userRole.service.js';
 
 /**
  * @openapi
  * tags:
- *   - name: UserRoles
- *     description: User–Role link operations
+ *   - name: UserRole
+ *     description: User-Role assignment management operations
  */
 
 /**
  * @openapi
- * /api/user-roles/link:
+ * /api/user-roles/assign:
  *   post:
- *     summary: Link (or reactivate) a user to a role
- *     tags: [UserRoles]
+ *     summary: Assign role to user
+ *     tags: [UserRole]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [ userId, roleId ]
+ *             required:
+ *               - userId
+ *               - roleId
  *             properties:
- *               userId: { type: integer, example: 12 }
- *               roleId: { type: integer, example: 5 }
- *               active: { type: boolean, default: true }
+ *               userId:
+ *                 type: integer
+ *                 example: 1
+ *               roleId:
+ *                 type: integer
+ *                 example: 2
+ *               active:
+ *                 type: boolean
+ *                 default: true
  *     responses:
- *       200: { description: Link created/updated }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
+ *       200:
+ *         description: Role assigned successfully
+ *       400:
+ *         description: Validation error
  */
-export const link = async (req, res, next) => {
+export const assignUserRole = async (req, res, next) => {
   try {
     const { userId, roleId, active = true } = req.body || {};
-    const result = await userRoleService.link(userId, roleId, active);
-    sendSuccess(res, result, 'Link created/updated');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
+    const result = await userRoleService.assignUserRole(userId, roleId, active);
+    sendSuccess(res, result, 'Role assigned successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
 };
 
 /**
  * @openapi
- * /api/user-roles/unlink:
- *   post:
- *     summary: Unlink a user from a role
- *     tags: [UserRoles]
+ * /api/user-roles/remove:
+ *   delete:
+ *     summary: Remove role from user
+ *     tags: [UserRole]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [ userId, roleId ]
+ *             required:
+ *               - userId
+ *               - roleId
  *             properties:
- *               userId: { type: integer, example: 12 }
- *               roleId: { type: integer, example: 5 }
+ *               userId:
+ *                 type: integer
+ *                 example: 1
+ *               roleId:
+ *                 type: integer
+ *                 example: 2
  *     responses:
- *       200: { description: Link removed }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
+ *       200:
+ *         description: Role removed successfully
+ *       404:
+ *         description: Assignment not found
  */
-export const unlink = async (req, res, next) => {
+export const removeUserRole = async (req, res, next) => {
   try {
     const { userId, roleId } = req.body || {};
-    const result = await userRoleService.unlink(userId, roleId);
-    sendSuccess(res, result, 'Link removed');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
+    const result = await userRoleService.removeUserRole(userId, roleId);
+    sendSuccess(res, result, 'Role removed successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
 };
 
 /**
  * @openapi
- * /api/user-roles/set-active:
- *   post:
- *     summary: Set active on a specific link
- *     tags: [UserRoles]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [ userId, roleId, active ]
- *             properties:
- *               userId: { type: integer, example: 12 }
- *               roleId: { type: integer, example: 5 }
- *               active: { type: boolean, example: true }
+ * /api/user-roles/users/{userId}/roles:
+ *   get:
+ *     summary: Get all roles for a user
+ *     tags: [UserRole]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: activeOnly
+ *         schema:
+ *           type: boolean
+ *           default: true
  *     responses:
- *       200: { description: Link active updated }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
+ *       200:
+ *         description: List of roles retrieved successfully
  */
-export const setActive = async (req, res, next) => {
+export const getRolesByUser = async (req, res, next) => {
   try {
-    const { userId, roleId, active } = req.body || {};
-    const result = await userRoleService.setActive(userId, roleId, active);
-    sendSuccess(res, result, 'Link active updated');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
+    const userId = Number(req.params.userId);
+    const activeOnly = req.query.activeOnly !== 'false';
+    const result = await userRoleService.getRolesByUser(userId, activeOnly);
+    sendSuccess(res, result, 'Roles retrieved successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
+};
+
+/**
+ * @openapi
+ * /api/user-roles/roles/{roleId}/users:
+ *   get:
+ *     summary: Get all users for a role
+ *     tags: [UserRole]
+ *     parameters:
+ *       - in: path
+ *         name: roleId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: activeOnly
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *     responses:
+ *       200:
+ *         description: List of users retrieved successfully
+ */
+export const getUsersByRole = async (req, res, next) => {
+  try {
+    const roleId = Number(req.params.roleId);
+    const activeOnly = req.query.activeOnly !== 'false';
+    const result = await userRoleService.getUsersByRole(roleId, activeOnly);
+    sendSuccess(res, result, 'Users retrieved successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
 };
 
 /**
  * @openapi
  * /api/user-roles/toggle:
- *   post:
- *     summary: Toggle active on a specific link
- *     tags: [UserRoles]
+ *   patch:
+ *     summary: Toggle active status
+ *     tags: [UserRole]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [ userId, roleId ]
+ *             required:
+ *               - userId
+ *               - roleId
  *             properties:
- *               userId: { type: integer, example: 12 }
- *               roleId: { type: integer, example: 5 }
+ *               userId:
+ *                 type: integer
+ *                 example: 1
+ *               roleId:
+ *                 type: integer
+ *                 example: 2
  *     responses:
- *       200: { description: Link active toggled }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
+ *       200:
+ *         description: Status toggled successfully
  */
-export const toggle = async (req, res, next) => {
+export const toggleUserRole = async (req, res, next) => {
   try {
     const { userId, roleId } = req.body || {};
-    const result = await userRoleService.toggle(userId, roleId);
-    sendSuccess(res, result, 'Link active toggled');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
+    const result = await userRoleService.toggleUserRole(userId, roleId);
+    sendSuccess(res, result, 'Status toggled successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
 };
 
 /**
  * @openapi
- * /api/users/{userId}/roles:
- *   get:
- *     summary: List roles by user
- *     tags: [UserRoles]
+ * /api/user-roles/users/{userId}/roles/sync:
+ *   put:
+ *     summary: Sync (replace) all roles for a user
+ *     tags: [UserRole]
  *     parameters:
  *       - in: path
  *         name: userId
  *         required: true
- *         schema: { type: integer }
- *       - in: query
- *         name: activeOnly
- *         required: false
- *         schema: { type: boolean, default: true }
- *         description: If true, only active links are returned
- *     responses:
- *       200: { description: Roles by user retrieved }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- */
-export const listRolesByUser = async (req, res, next) => {
-  try {
-    const userId = Number(req.params.userId);
-    const activeOnly = String(req.query.activeOnly ?? 'true') !== 'false';
-    const rows = await userRoleService.listRolesByUser(userId, activeOnly);
-    sendSuccess(res, rows, 'Roles by user retrieved');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
-};
-
-/**
- * @openapi
- * /api/roles/{roleId}/users:
- *   get:
- *     summary: List users by role
- *     tags: [UserRoles]
- *     parameters:
- *       - in: path
- *         name: roleId
- *         required: true
- *         schema: { type: integer }
- *       - in: query
- *         name: activeOnly
- *         required: false
- *         schema: { type: boolean, default: true }
- *         description: If true, only active links are returned
- *     responses:
- *       200: { description: Users by role retrieved }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- */
-export const listUsersByRole = async (req, res, next) => {
-  try {
-    const roleId = Number(req.params.roleId);
-    const activeOnly = String(req.query.activeOnly ?? 'true') !== 'false';
-    const rows = await userRoleService.listUsersByRole(roleId, activeOnly);
-    sendSuccess(res, rows, 'Users by role retrieved');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
-};
-
-/**
- * @openapi
- * /api/user-roles/bulk/link-roles-to-user:
- *   post:
- *     summary: Bulk link roles to a user (idempotent upsert)
- *     tags: [UserRoles]
+ *         schema:
+ *           type: integer
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [ userId, roleIds ]
+ *             required:
+ *               - roleIds
  *             properties:
- *               userId: { type: integer, example: 12 }
  *               roleIds:
  *                 type: array
- *                 items: { type: integer }
- *                 example: [1,2,3]
- *               active: { type: boolean, default: true }
+ *                 items:
+ *                   type: integer
+ *                 example: [1, 2, 3]
+ *               active:
+ *                 type: boolean
+ *                 default: true
  *     responses:
- *       200: { description: Roles linked to user }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- */
-export const bulkLinkRolesToUser = async (req, res, next) => {
-  try {
-    const { userId, roleIds, active = true } = req.body || {};
-    const result = await userRoleService.bulkLinkRolesToUser(userId, roleIds, active);
-    sendSuccess(res, result, 'Roles linked to user');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
-};
-
-/**
- * @openapi
- * /api/user-roles/bulk/link-users-to-role:
- *   post:
- *     summary: Bulk link users to a role (idempotent upsert)
- *     tags: [UserRoles]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [ roleId, userIds ]
- *             properties:
- *               roleId: { type: integer, example: 5 }
- *               userIds:
- *                 type: array
- *                 items: { type: integer }
- *                 example: [10,11,12]
- *               active: { type: boolean, default: true }
- *     responses:
- *       200: { description: Users linked to role }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- */
-export const bulkLinkUsersToRole = async (req, res, next) => {
-  try {
-    const { roleId, userIds, active = true } = req.body || {};
-    const result = await userRoleService.bulkLinkUsersToRole(roleId, userIds, active);
-    sendSuccess(res, result, 'Users linked to role');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
-};
-
-/**
- * @openapi
- * /api/user-roles/bulk/set-active-by-user:
- *   post:
- *     summary: Bulk set active by user for a subset of roles
- *     tags: [UserRoles]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [ userId, roleIds, active ]
- *             properties:
- *               userId: { type: integer, example: 12 }
- *               roleIds:
- *                 type: array
- *                 items: { type: integer }
- *                 example: [1,2,3]
- *               active: { type: boolean, example: false }
- *     responses:
- *       200: { description: Active flags updated for user/roles }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- */
-export const bulkSetActiveByUser = async (req, res, next) => {
-  try {
-    const { userId, roleIds, active } = req.body || {};
-    const result = await userRoleService.bulkSetActiveByUser(userId, roleIds, active);
-    sendSuccess(res, result, 'Active flags updated for user/roles');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
-};
-
-/**
- * @openapi
- * /api/user-roles/bulk/set-active-by-role:
- *   post:
- *     summary: Bulk set active by role for a subset of users
- *     tags: [UserRoles]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [ roleId, userIds, active ]
- *             properties:
- *               roleId: { type: integer, example: 5 }
- *               userIds:
- *                 type: array
- *                 items: { type: integer }
- *                 example: [10,11,12]
- *               active: { type: boolean, example: true }
- *     responses:
- *       200: { description: Active flags updated for role/users }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- */
-export const bulkSetActiveByRole = async (req, res, next) => {
-  try {
-    const { roleId, userIds, active } = req.body || {};
-    const result = await userRoleService.bulkSetActiveByRole(roleId, userIds, active);
-    sendSuccess(res, result, 'Active flags updated for role/users');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
-};
-
-/**
- * @openapi
- * /api/user-roles/sync/roles-for-user:
- *   post:
- *     summary: Replace a user's roles (sync to exactly a given set)
- *     tags: [UserRoles]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [ userId, roleIds ]
- *             properties:
- *               userId: { type: integer, example: 12 }
- *               roleIds:
- *                 type: array
- *                 items: { type: integer }
- *                 example: [1,2,3]
- *               active: { type: boolean, default: true }
- *     responses:
- *       200: { description: User roles synchronized }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
+ *       200:
+ *         description: Roles synced successfully
  */
 export const syncRolesForUser = async (req, res, next) => {
   try {
-    const { userId, roleIds, active = true } = req.body || {};
+    const userId = Number(req.params.userId);
+    const { roleIds, active = true } = req.body || {};
     const result = await userRoleService.syncRolesForUser(userId, roleIds, active);
-    sendSuccess(res, result, 'User roles synchronized');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
+    sendSuccess(res, result, 'Roles synced successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
 };
 
 /**
  * @openapi
- * /api/user-roles/sync/users-for-role:
- *   post:
- *     summary: Replace a role's users (sync to exactly a given set)
- *     tags: [UserRoles]
+ * /api/user-roles/roles/{roleId}/users/sync:
+ *   put:
+ *     summary: Sync (replace) all users for a role
+ *     tags: [UserRole]
+ *     parameters:
+ *       - in: path
+ *         name: roleId
+ *         required: true
+ *         schema:
+ *           type: integer
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [ roleId, userIds ]
+ *             required:
+ *               - userIds
  *             properties:
- *               roleId: { type: integer, example: 5 }
  *               userIds:
  *                 type: array
- *                 items: { type: integer }
- *                 example: [10,11,12]
- *               active: { type: boolean, default: true }
+ *                 items:
+ *                   type: integer
+ *                 example: [1, 2, 3]
+ *               active:
+ *                 type: boolean
+ *                 default: true
  *     responses:
- *       200: { description: Role users synchronized }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
+ *       200:
+ *         description: Users synced successfully
  */
 export const syncUsersForRole = async (req, res, next) => {
   try {
-    const { roleId, userIds, active = true } = req.body || {};
+    const roleId = Number(req.params.roleId);
+    const { userIds, active = true } = req.body || {};
     const result = await userRoleService.syncUsersForRole(roleId, userIds, active);
-    sendSuccess(res, result, 'Role users synchronized');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
+    sendSuccess(res, result, 'Users synced successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
 };
 
 /**
  * @openapi
- * /api/user-roles/has:
+ * /api/user-roles/check:
  *   get:
- *     summary: Check if a user has a role
- *     tags: [UserRoles]
+ *     summary: Check if user has a specific role
+ *     tags: [UserRole]
  *     parameters:
  *       - in: query
  *         name: userId
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
  *       - in: query
  *         name: roleId
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
  *       - in: query
  *         name: activeOnly
- *         required: false
- *         schema: { type: boolean, default: true }
+ *         schema:
+ *           type: boolean
+ *           default: true
  *     responses:
- *       200: { description: HasRole check completed }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
+ *       200:
+ *         description: Access check completed
  */
-export const hasRole = async (req, res, next) => {
+export const checkUserAccess = async (req, res, next) => {
   try {
-    const { userId, roleId, activeOnly = true } = req.query || {};
-    const result = await userRoleService.hasRole(userId, roleId, String(activeOnly) !== 'false');
-    sendSuccess(res, result, 'HasRole check completed');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
+    const userId = Number(req.query.userId);
+    const roleId = Number(req.query.roleId);
+    const activeOnly = req.query.activeOnly !== 'false';
+    const result = await userRoleService.checkUserAccess(userId, roleId, activeOnly);
+    sendSuccess(res, result, 'Access check completed', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
 };
 
 /**
  * @openapi
- * /api/roles/{roleId}/users/count:
+ * /api/user-roles/stats:
  *   get:
- *     summary: Count users for a role
- *     tags: [UserRoles]
+ *     summary: Get user-role statistics
+ *     tags: [UserRole]
  *     parameters:
- *       - in: path
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *       - in: query
  *         name: roleId
- *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ */
+export const getUserRoleStats = async (req, res, next) => {
+  try {
+    const userId = req.query.userId ? Number(req.query.userId) : null;
+    const roleId = req.query.roleId ? Number(req.query.roleId) : null;
+    const result = await userRoleService.getUserRoleStats(userId, roleId);
+    sendSuccess(res, result, 'Statistics retrieved successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
+};
+
+/**
+ * @openapi
+ * /api/user-roles:
+ *   get:
+ *     summary: Get all user-role assignments with pagination
+ *     tags: [UserRole]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 50
  *       - in: query
  *         name: activeOnly
- *         required: false
- *         schema: { type: boolean, default: true }
+ *         schema:
+ *           type: boolean
+ *           default: false
  *     responses:
- *       200: { description: Users count per role }
- *       400: { description: Validation error }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
+ *       200:
+ *         description: Paginated list retrieved successfully
  */
-export const countUsersForRole = async (req, res, next) => {
+export const getAllUserRoles = async (req, res, next) => {
   try {
-    const roleId = Number(req.params.roleId);
-    const activeOnly = String(req.query.activeOnly ?? 'true') !== 'false';
-    const result = await userRoleService.countUsersForRole(roleId, activeOnly);
-    sendSuccess(res, result, 'Users count per role');
-  } catch (err) { next(new AppError(err.message, err.statusCode || 500)); }
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 50);
+    const activeOnly = req.query.activeOnly === 'true';
+    const result = await userRoleService.getAllUserRoles(page, pageSize, activeOnly);
+    sendSuccess(res, result, 'User roles retrieved successfully', 200);
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
 };
