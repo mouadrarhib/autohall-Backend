@@ -510,29 +510,17 @@ export const SQL = {
   },
 
   USER_ROLE: {
-    // single link ops
-    LINK: 'EXEC dbo.usp_UserRole_Link @UserId=:userId, @RoleId=:roleId, @Active=:active',
-    UNLINK: 'EXEC dbo.usp_UserRole_Unlink @UserId=:userId, @RoleId=:roleId',
-    SET_ACTIVE: 'EXEC dbo.usp_UserRole_SetActive @UserId=:userId, @RoleId=:roleId, @Active=:active',
-    TOGGLE: 'EXEC dbo.usp_UserRole_Toggle @UserId=:userId, @RoleId=:roleId',
+  UR_ASSIGN: 'EXEC dbo.sp_UserRole_Assign @UserId=:userId, @RoleId=:roleId, @Active=:active',
+  UR_REMOVE: 'EXEC dbo.sp_UserRole_Remove @UserId=:userId, @RoleId=:roleId',
+  UR_GET_ROLES_BY_USER: 'EXEC dbo.sp_UserRole_GetRolesByUser @UserId=:userId, @ActiveOnly=:activeOnly',
+  UR_GET_USERS_BY_ROLE: 'EXEC dbo.sp_UserRole_GetUsersByRole @RoleId=:roleId, @ActiveOnly=:activeOnly',
+  UR_TOGGLE_ACTIVE: 'EXEC dbo.sp_UserRole_ToggleActive @UserId=:userId, @RoleId=:roleId',
+  UR_SYNC_ROLES_FOR_USER: 'EXEC dbo.sp_UserRole_SyncRolesForUser @UserId=:userId, @RoleIds=:roleIds, @Active=:active',
+  UR_SYNC_USERS_FOR_ROLE: 'EXEC dbo.sp_UserRole_SyncUsersForRole @RoleId=:roleId, @UserIds=:userIds, @Active=:active',
+  UR_CHECK_ACCESS: 'EXEC dbo.sp_UserRole_CheckAccess @UserId=:userId, @RoleId=:roleId, @ActiveOnly=:activeOnly',
+  UR_GET_STATS: 'EXEC dbo.sp_UserRole_GetStats @UserId=:userId, @RoleId=:roleId',
+  UR_GET_ALL: 'EXEC dbo.sp_UserRole_GetAll @PageNumber=:pageNumber, @PageSize=:pageSize, @ActiveOnly=:activeOnly',
+},
 
-    // lookups
-    LIST_ROLES_BY_USER: 'EXEC dbo.usp_UserRole_ListRolesByUser @UserId=:userId, @ActiveOnly=:activeOnly',
-    LIST_USERS_BY_ROLE: 'EXEC dbo.usp_UserRole_ListUsersByRole @RoleId=:roleId, @ActiveOnly=:activeOnly',
-
-    // bulk
-    BULK_LINK_ROLES_TO_USER: 'EXEC dbo.usp_UserRole_BulkLinkRolesToUser @UserId=:userId, @RoleIds=:roleIds, @Active=:active',
-    BULK_LINK_USERS_TO_ROLE: 'EXEC dbo.usp_UserRole_BulkLinkUsersToRole @RoleId=:roleId, @UserIds=:userIds, @Active=:active',
-    BULK_SET_ACTIVE_BY_USER: 'EXEC dbo.usp_UserRole_BulkSetActiveByUser @UserId=:userId, @RoleIds=:roleIds, @Active=:active',
-    BULK_SET_ACTIVE_BY_ROLE: 'EXEC dbo.usp_UserRole_BulkSetActiveByRole @RoleId=:roleId, @UserIds=:userIds, @Active=:active',
-
-    // sync
-    SYNC_ROLES_FOR_USER: 'EXEC dbo.usp_UserRole_SyncRolesForUser @UserId=:userId, @RoleIds=:roleIds, @Active=:active',
-    SYNC_USERS_FOR_ROLE: 'EXEC dbo.usp_UserRole_SyncUsersForRole @RoleId=:roleId, @UserIds=:userIds, @Active=:active',
-
-    // checks/stats
-    HAS_ROLE: 'EXEC dbo.usp_UserRole_HasRole @UserId=:userId, @RoleId=:roleId, @ActiveOnly=:activeOnly',
-    COUNT_USERS_FOR_ROLE: 'EXEC dbo.usp_UserRole_CountUsersForRole @RoleId=:roleId, @ActiveOnly=:activeOnly'
-  }
 
 };

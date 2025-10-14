@@ -1,60 +1,101 @@
 // src/routes/userRole.routes.js
+
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
 import { errorHandler } from '../middlewares/responseHandler.js';
 
-import * as ctrl from '../controllers/userRole.controller.js';
-
 import {
-  validateLinkBody,
-  validateUnlinkBody,
-  validateSetActiveBody,
-  validateUserIdParam,
-  validateRoleIdParam,
-  validateBulkRolesToUser,
-  validateBulkUsersToRole,
-  validateBulkSetActiveByUser,
-  validateBulkSetActiveByRole,
-  validateSyncRolesForUser,
-  validateSyncUsersForRole,
-  validateHasRoleQuery
+  validateAssign,
+  validateRemove,
+  validateToggle,
+  validateUserId,
+  validateRoleId,
+  validateSyncRoles,
+  validateSyncUsers,
+  validateCheck
 } from '../middlewares/userRole/validateInput.js';
 
 import {
   canReadUserRole,
-  canLinkUserRole,
+  canCreateUserRole,
   canUpdateUserRole,
-  canSyncUserRole,
-  canDeleteUserRole
+  canDeleteUserRole,
+  canManageUserRole
 } from '../middlewares/userRole/hasPermission.js';
 
+import * as userRoleController from '../controllers/userRole.controller.js';
+
 const router = express.Router();
+
+// All routes require authentication
 router.use(isAuth);
 
-// Single link ops
-router.post('/link', canLinkUserRole, validateLinkBody, ctrl.link);
-router.post('/unlink', canDeleteUserRole, validateUnlinkBody, ctrl.unlink);
-router.post('/set-active', canUpdateUserRole, validateSetActiveBody, ctrl.setActive);
-router.post('/toggle', canUpdateUserRole, validateUnlinkBody, ctrl.toggle);
+// Assign/Remove operations
+router.post('/assign',
+  canCreateUserRole,
+  validateAssign,
+  userRoleController.assignUserRole
+);
 
-// Lookups
-router.get('/users/:roleId', canReadUserRole, validateRoleIdParam, ctrl.listUsersByRole);
-router.get('/users/:roleId/count', canReadUserRole, validateRoleIdParam, ctrl.countUsersForRole);
-router.get('/users/:roleId/has', canReadUserRole, validateHasRoleQuery, ctrl.hasRole); // alternative query form
+router.delete('/remove',
+  canDeleteUserRole,
+  validateRemove,
+  userRoleController.removeUserRole
+);
 
-router.get('/roles/:userId', canReadUserRole, validateUserIdParam, ctrl.listRolesByUser);
+// Toggle active status
+router.patch('/toggle',
+  canUpdateUserRole,
+  validateToggle,
+  userRoleController.toggleUserRole
+);
 
-// Bulk
-router.post('/bulk/link-roles-to-user', canLinkUserRole, validateBulkRolesToUser, ctrl.bulkLinkRolesToUser);
-router.post('/bulk/link-users-to-role', canLinkUserRole, validateBulkUsersToRole, ctrl.bulkLinkUsersToRole);
-router.post('/bulk/set-active-by-user', canUpdateUserRole, validateBulkSetActiveByUser, ctrl.bulkSetActiveByUser);
-router.post('/bulk/set-active-by-role', canUpdateUserRole, validateBulkSetActiveByRole, ctrl.bulkSetActiveByRole);
+// List operations
+router.get('/users/:userId/roles',
+  validateUserId,
+  canReadUserRole,
+  userRoleController.getRolesByUser
+);
 
-// Sync
-router.post('/sync/roles-for-user', canSyncUserRole, validateSyncRolesForUser, ctrl.syncRolesForUser);
-router.post('/sync/users-for-role', canSyncUserRole, validateSyncUsersForRole, ctrl.syncUsersForRole);
+router.get('/roles/:roleId/users',
+  validateRoleId,
+  canReadUserRole,
+  userRoleController.getUsersByRole
+);
 
-// Error handler
+// Sync operations (replace all)
+router.put('/users/:userId/roles/sync',
+  validateUserId,
+  canManageUserRole,
+  validateSyncRoles,
+  userRoleController.syncRolesForUser
+);
+
+router.put('/roles/:roleId/users/sync',
+  validateRoleId,
+  canManageUserRole,
+  validateSyncUsers,
+  userRoleController.syncUsersForRole
+);
+
+// Utility operations
+router.get('/check',
+  canReadUserRole,
+  validateCheck,
+  userRoleController.checkUserAccess
+);
+
+router.get('/stats',
+  canReadUserRole,
+  userRoleController.getUserRoleStats
+);
+
+// Get all (admin view with pagination)
+router.get('/',
+  canReadUserRole,
+  userRoleController.getAllUserRoles
+);
+
 router.use(errorHandler);
 
 export default router;

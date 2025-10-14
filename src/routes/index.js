@@ -39,7 +39,7 @@ router.use('/periode', periodeRoute);
 router.use('/type-ventes', typeVenteRoutes);
 router.use('/type-objectifs', typeObjectifRoutes);
 router.use('/objectifs', objectifRoutes);
-router.use('/api/user-roles', userRoleRoutes);
+router.use('/user-roles', userRoleRoutes);
 
 
 
