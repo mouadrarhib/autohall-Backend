@@ -190,3 +190,114 @@ export async function getAvailableSites() {
   ]);
   return { filiales, succursales, groupements };
 }
+
+/**
+ * updateUser - partial update user information
+ */
+export async function updateUser(id, {
+  fullName = null,
+  email = null,
+  username = null,
+  password = null,
+  idUserSite = null,
+  actif = null,
+  active = null
+} = {}) {
+  // Hash password if provided
+  const password_hash = password ? await bcrypt.hash(password, 10) : null;
+  
+  const params = prepareStoredProcParams({
+    id: Number(id),
+    fullName: fullName ? fullName.trim() : null,
+    email: email ? email.trim().toLowerCase() : null,
+    username: username ? username.trim() : null,
+    password: password_hash,
+    idUserSite: idUserSite !== null ? Number(idUserSite) : null,
+    actif: actif !== null ? (actif ? 1 : 0) : null,
+    active: active !== null ? (active ? 1 : 0) : null
+  });
+
+  try {
+    const rows = await sequelize.query(SQL.USER.UPDATE_USER, {
+      replacements: params,
+      type: QueryTypes.SELECT
+    });
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+}
+
+/**
+ * updateUserPassword - update user password only
+ */
+export async function updateUserPassword(id, newPassword) {
+  const newPasswordHash = await bcrypt.hash(newPassword, 10);
+  
+  try {
+    const rows = await sequelize.query(SQL.USER.UPDATE_USER_PASSWORD, {
+      replacements: {
+        id: Number(id),
+        newPasswordHash
+      },
+      type: QueryTypes.SELECT
+    });
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Error updating user password:', error);
+    throw error;
+  }
+}
+
+/**
+ * activateUser - activate a user
+ */
+export async function activateUser(id) {
+  try {
+    const rows = await sequelize.query(SQL.USER.ACTIVATE_USER, {
+      replacements: { id: Number(id) },
+      type: QueryTypes.SELECT
+    });
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Error activating user:', error);
+    throw error;
+  }
+}
+
+/**
+ * deactivateUser - deactivate a user
+ */
+export async function deactivateUser(id) {
+  try {
+    const rows = await sequelize.query(SQL.USER.DEACTIVATE_USER, {
+      replacements: { id: Number(id) },
+      type: QueryTypes.SELECT
+    });
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Error deactivating user:', error);
+    throw error;
+  }
+}
+
+/**
+ * updateUserSite - update user site assignment
+ */
+export async function updateUserSite(id, idUserSite) {
+  try {
+    const rows = await sequelize.query(SQL.USER.UPDATE_USER_SITE, {
+      replacements: {
+        id: Number(id),
+        idUserSite: Number(idUserSite)
+      },
+      type: QueryTypes.SELECT
+    });
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Error updating user site:', error);
+    throw error;
+  }
+}
+

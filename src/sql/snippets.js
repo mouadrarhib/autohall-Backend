@@ -1,30 +1,55 @@
 // src/sql/snippets.js
 
 export const SQL = {
+
   USER: {
-    // Basic user operations
-    CREATE_USER: `EXEC sp_CreateUser @username = :username, @email = :email, @password = :password`,
-    FIND_USER_BY_EMAIL: `EXEC sp_FindUserByEmail @Email = :email`,
-    GET_USER_BY_ID: `EXEC sp_GetUserById @UserId = :id`,
+  // Basic user operations
+  CREATE_USER: `EXEC sp_CreateUser @username = :username, @email = :email, @password = :password`,
+  FIND_USER_BY_EMAIL: `EXEC sp_FindUserByEmail @Email = :email`,
+  GET_USER_BY_ID: `EXEC sp_GetUserById @UserId = :id`,
+  
+  // NEW: Add user update
+  UPDATE_USER: `EXEC dbo.sp_User_Update 
+    @Id = :id,
+    @FullName = :fullName,
+    @Email = :email,
+    @Username = :username,
+    @Password = :password,
+    @IdUserSite = :idUserSite,
+    @Actif = :actif,
+    @Active = :active`,
+  
+  // NEW: Update password separately
+  UPDATE_USER_PASSWORD: `EXEC dbo.sp_User_UpdatePassword 
+    @Id = :id,
+    @NewPasswordHash = :newPasswordHash`,
+  
+  // NEW: Activate/Deactivate
+  ACTIVATE_USER: `EXEC dbo.sp_User_Activate @Id = :id`,
+  DEACTIVATE_USER: `EXEC dbo.sp_User_Deactivate @Id = :id`,
+  
+  // NEW: Update user site
+  UPDATE_USER_SITE: `EXEC dbo.sp_User_UpdateSite 
+    @Id = :id,
+    @IdUserSite = :idUserSite`,
 
-    // Composite creation with roles/permissions/site
-    CREATE_USER_WITH_ROLES_PERMISSIONS_SITE: `EXEC sp_CreateUserWithRolePermissionsAndSite
-      @full_name = :full_name,
-      @email = :email,
-      @username = :username,
-      @password = :password,
-      @groupement_name = :groupement_name,
-      @site_id = :site_id,
-      @role_ids = :role_ids,
-      @permission_ids = :permission_ids`,
+  // Composite creation with roles/permissions/site
+  CREATE_USER_WITH_ROLES_PERMISSIONS_SITE: `EXEC sp_CreateUserWithRolePermissionsAndSite
+    @full_name = :full_name,
+    @email = :email,
+    @username = :username,
+    @password = :password,
+    @groupement_name = :groupement_name,
+    @site_id = :site_id,
+    @role_ids = :role_ids,
+    @permission_ids = :permission_ids`,
 
-    // Complete info views
-    GET_ALL_USERS_COMPLETE_INFO: `SELECT * FROM vw_UserCompleteInfo ORDER BY UserId DESC`,
-    GET_USER_COMPLETE_INFO_BY_ID: `SELECT * FROM vw_UserCompleteInfo WHERE UserId = :userId`,
-    GET_USERS_BY_SITE_TYPE: `SELECT * FROM vw_UserCompleteInfo WHERE GroupementType = :groupementType ORDER BY UserId DESC`,
-    GET_ACTIVE_USERS_COMPLETE_INFO: `SELECT * FROM vw_UserCompleteInfo WHERE UserStatus = 'Active' ORDER BY UserId DESC`,
+  // Complete info views
+  GET_ALL_USERS_COMPLETE_INFO: `SELECT * FROM vw_UserCompleteInfo ORDER BY UserId DESC`,
+  GET_USER_COMPLETE_INFO_BY_ID: `SELECT * FROM vw_UserCompleteInfo WHERE UserId = :userId`,
+  GET_USERS_BY_SITE_TYPE: `SELECT * FROM vw_UserCompleteInfo WHERE GroupementType = :groupementType ORDER BY UserId DESC`,
+  GET_ACTIVE_USERS_COMPLETE_INFO: `SELECT * FROM vw_UserCompleteInfo WHERE UserStatus = 'Active' ORDER BY UserId DESC`,
   },
-
   // Helpful lookups used in user flows (active only)
   LOOKUP: {
     GET_ALL_FILIALES: `SELECT id, name, active FROM Filiale WHERE active = 1 ORDER BY name`,
