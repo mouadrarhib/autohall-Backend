@@ -8,7 +8,7 @@ import * as modeleService from '../services/modele.service.js';
  * @openapi
  * tags:
  *   - name: Modeles
- *     description: Modele management operations
+ *     description: Modele (car model) management operations
  */
 
 /**
@@ -33,6 +33,9 @@ import * as modeleService from '../services/modele.service.js';
  *               idMarque:
  *                 type: integer
  *                 example: 1
+ *               imageUrl:
+ *                 type: string
+ *                 example: "https://upload.wikimedia.org/wikipedia/commons/toyota-corolla.png"
  *               active:
  *                 type: boolean
  *                 default: true
@@ -46,9 +49,9 @@ import * as modeleService from '../services/modele.service.js';
  */
 export const createModele = async (req, res, next) => {
   try {
-    const { name, idMarque, active = true } = req.body || {};
-    const result = await modeleService.createModele(name, idMarque, active);
-    res.locals.objectId = result.id; // for audit
+    const { name, idMarque, imageUrl = null, active = true } = req.body || {};
+    const result = await modeleService.createModele(name, idMarque, imageUrl, active);
+    res.locals.objectId = result.id;
     sendSuccess(res, result, 'Modele created successfully', 201);
   } catch (err) {
     next(new AppError(err.message, err.statusCode || 500));
@@ -67,6 +70,7 @@ export const createModele = async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Modele ID
  *     responses:
  *       200:
  *         description: Modele found
@@ -100,21 +104,25 @@ export const getModeleById = async (req, res, next) => {
  *         schema:
  *           type: integer
  *           nullable: true
+ *         description: Filter by marque ID
  *       - in: query
  *         name: onlyActive
  *         schema:
  *           type: boolean
  *           default: true
+ *         description: Filter for active modeles only
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
+ *         description: Page number
  *       - in: query
  *         name: pageSize
  *         schema:
  *           type: integer
  *           default: 10
+ *         description: Records per page
  *     responses:
  *       200:
  *         description: Paginated list of modeles
@@ -122,7 +130,7 @@ export const getModeleById = async (req, res, next) => {
 export const listModeles = async (req, res, next) => {
   try {
     const { idMarque } = req.query;
-    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
     
@@ -145,21 +153,25 @@ export const listModeles = async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Marque ID
  *       - in: query
  *         name: onlyActive
  *         schema:
  *           type: boolean
  *           default: true
+ *         description: Filter for active modeles only
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
+ *         description: Page number
  *       - in: query
  *         name: pageSize
  *         schema:
  *           type: integer
  *           default: 10
+ *         description: Records per page
  *     responses:
  *       200:
  *         description: Paginated list of modeles for the marque
@@ -167,7 +179,7 @@ export const listModeles = async (req, res, next) => {
 export const listModelesByMarque = async (req, res, next) => {
   try {
     const idMarque = Number(req.params.idMarque);
-    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
     
@@ -196,31 +208,35 @@ export const listModelesByMarque = async (req, res, next) => {
  *         schema:
  *           type: integer
  *           nullable: true
+ *         description: Filter by marque ID
  *       - in: query
  *         name: onlyActive
  *         schema:
  *           type: boolean
  *           default: true
+ *         description: Filter for active modeles only
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
+ *         description: Page number
  *       - in: query
  *         name: pageSize
  *         schema:
  *           type: integer
  *           default: 10
+ *         description: Records per page
  *     responses:
  *       200:
  *         description: Paginated search results
  *       400:
- *         description: Invalid search query
+ *         description: Invalid or missing search query
  */
 export const searchModeles = async (req, res, next) => {
   try {
     const { q, idMarque } = req.query;
-    const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
     
@@ -243,6 +259,7 @@ export const searchModeles = async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Modele ID
  *     requestBody:
  *       required: true
  *       content:
@@ -252,27 +269,33 @@ export const searchModeles = async (req, res, next) => {
  *             properties:
  *               name:
  *                 type: string
+ *                 example: "Camry"
  *               idMarque:
  *                 type: integer
+ *                 example: 1
+ *               imageUrl:
+ *                 type: string
+ *                 example: "https://upload.wikimedia.org/wikipedia/commons/toyota-camry.png"
  *               active:
  *                 type: boolean
  *     responses:
  *       200:
- *         description: Modele updated
+ *         description: Modele updated successfully
  *       404:
  *         description: Modele not found
  */
 export const updateModele = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { name = null, idMarque = null, active = null } = req.body || {};
-    const result = await modeleService.updateModele(id, name, idMarque, active);
+    const { name = null, idMarque = null, imageUrl = null, active = null } = req.body || {};
+    
+    const result = await modeleService.updateModele(id, name, idMarque, imageUrl, active);
     
     if (!result) {
       return next(new AppError('Modele not found', 404));
     }
     
-    res.locals.objectId = id; // for audit
+    res.locals.objectId = id;
     sendSuccess(res, result, 'Modele updated successfully');
   } catch (err) {
     next(new AppError(err.message, err.statusCode || 500));
@@ -291,9 +314,10 @@ export const updateModele = async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Modele ID
  *     responses:
  *       200:
- *         description: Modele activated
+ *         description: Modele activated successfully
  *       404:
  *         description: Modele not found
  */
@@ -306,7 +330,7 @@ export const activateModele = async (req, res, next) => {
       return next(new AppError('Modele not found', 404));
     }
     
-    res.locals.objectId = id; // for audit
+    res.locals.objectId = id;
     sendSuccess(res, result, 'Modele activated successfully');
   } catch (err) {
     next(new AppError(err.message, err.statusCode || 500));
@@ -325,9 +349,10 @@ export const activateModele = async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Modele ID
  *     responses:
  *       200:
- *         description: Modele deactivated
+ *         description: Modele deactivated successfully
  *       404:
  *         description: Modele not found
  */
@@ -340,7 +365,7 @@ export const deactivateModele = async (req, res, next) => {
       return next(new AppError('Modele not found', 404));
     }
     
-    res.locals.objectId = id; // for audit
+    res.locals.objectId = id;
     sendSuccess(res, result, 'Modele deactivated successfully');
   } catch (err) {
     next(new AppError(err.message, err.statusCode || 500));

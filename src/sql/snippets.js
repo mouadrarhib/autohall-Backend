@@ -110,24 +110,26 @@ export const SQL = {
 
 
   MODELE: {
-    MODELE_CREATE: `
-      DECLARE @NewId INT;
-      EXEC dbo.sp_Modele_Create
-        @Name=:name,
-        @IdMarque=:idMarque,
-        @Active=:active,
-        @NewModeleId=@NewId OUTPUT;
-      SELECT id=@NewId;
-    `,
-    MODELE_GET_BY_ID: 'EXEC dbo.sp_Modele_GetById @Id=:id',
-    MODELE_LIST: 'EXEC dbo.sp_Modele_List @IdMarque=:idMarque, @OnlyActive=:onlyActive',
-    MODELE_LIST_BY_MARQUE: 'EXEC dbo.sp_Modele_ListByMarque @IdMarque=:idMarque, @OnlyActive=:onlyActive',
-    MODELE_SEARCH: 'EXEC dbo.sp_Modele_Search @q=:q, @IdMarque=:idMarque, @OnlyActive=:onlyActive',
-    MODELE_UPDATE: 'EXEC dbo.sp_Modele_Update @Id=:id, @Name=:name, @IdMarque=:idMarque, @Active=:active',
-    MODELE_ACTIVATE: 'EXEC dbo.sp_Modele_Activate @Id=:id',
-    MODELE_DEACTIVATE: 'EXEC dbo.sp_Modele_Deactivate @Id=:id',
-    MODELE_DELETE: 'EXEC dbo.sp_Modele_Delete @Id=:id',
+  MODELE_CREATE: `
+    DECLARE @NewId INT;
+    EXEC dbo.sp_Modele_Create
+      @Name=:name,
+      @IdMarque=:idMarque,
+      @ImageUrl=:imageUrl,
+      @Active=:active,
+      @NewModeleId=@NewId OUTPUT;
+    SELECT id=@NewId;
+  `,
+  MODELE_GET_BY_ID: 'EXEC dbo.sp_Modele_GetById @Id=:id',
+  MODELE_LIST: 'EXEC dbo.sp_Modele_List @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MODELE_LIST_BY_MARQUE: 'EXEC dbo.sp_Modele_ListByMarque @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MODELE_SEARCH: 'EXEC dbo.sp_Modele_Search @q=:q, @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MODELE_UPDATE: 'EXEC dbo.sp_Modele_Update @Id=:id, @Name=:name, @IdMarque=:idMarque, @ImageUrl=:imageUrl, @Active=:active',
+  MODELE_ACTIVATE: 'EXEC dbo.sp_Modele_Activate @Id=:id',
+  MODELE_DEACTIVATE: 'EXEC dbo.sp_Modele_Deactivate @Id=:id',
+  MODELE_DELETE: 'EXEC dbo.sp_Modele_Delete @Id=:id',
   },
+
 
   VERSION: {
     VERSION_CREATE: `

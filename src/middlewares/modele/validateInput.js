@@ -1,19 +1,14 @@
 // src/middlewares/modele/validateInput.js
 
-/**
- * Validation middleware specifically for Modele management operations
- */
-
-// Helper function to create validation middleware
 const createValidator = (validationRules) => {
   return (req, res, next) => {
     const errors = {};
+
     for (const [field, rules] of Object.entries(validationRules)) {
       let value = req.body?.[field] ?? req.params?.[field] ?? req.query?.[field];
-      
-      // Trim string values
+
       if (typeof value === 'string') value = value.trim();
-      
+
       for (const rule of rules) {
         const error = rule(value, field);
         if (error) {
@@ -30,48 +25,51 @@ const createValidator = (validationRules) => {
       });
     }
 
-    // Normalize data - trim name if exists in body
+    // Normalize data
     if (req.body?.name && typeof req.body.name === 'string') {
       req.body.name = req.body.name.trim();
+    }
+    if (req.body?.imageUrl && typeof req.body.imageUrl === 'string') {
+      req.body.imageUrl = req.body.imageUrl.trim();
     }
 
     next();
   };
 };
 
-// Validation rules
 const rules = {
   required: (value, field) => !value ? `${field} is required` : null,
-  string: (value, field) => 
-    value !== undefined && value !== null && typeof value !== 'string' 
-      ? `${field} must be a string` 
+  string: (value, field) =>
+    value !== undefined && value !== null && typeof value !== 'string'
+      ? `${field} must be a string`
       : null,
-  maxLength: (max) => (value, field) => 
+  maxLength: (max) => (value, field) =>
     value && value.length > max ? `${field} must be ${max} characters or less` : null,
-  minLength: (min) => (value, field) => 
+  minLength: (min) => (value, field) =>
     value && value.length < min ? `${field} must be at least ${min} characters` : null,
   integer: (value, field) => {
     const num = Number(value);
-    return value !== undefined && (!Number.isInteger(num) || num <= 0) 
-      ? `${field} must be a positive integer` 
+    return value !== undefined && (!Number.isInteger(num) || num <= 0)
+      ? `${field} must be a positive integer`
       : null;
   },
-  boolean: (value, field) => 
+  boolean: (value, field) =>
     value !== undefined && typeof value !== 'boolean' && !['true', 'false', '1', '0'].includes(String(value).toLowerCase())
-      ? `${field} must be a boolean` 
+      ? `${field} must be a boolean`
       : null
 };
 
-// Modele-specific validators
 export const validateModeleCreate = createValidator({
   name: [rules.required, rules.string, rules.minLength(1), rules.maxLength(255)],
   idMarque: [rules.required, rules.integer],
+  imageUrl: [rules.string, rules.maxLength(500)],
   active: [rules.boolean]
 });
 
 export const validateModeleUpdate = createValidator({
   name: [rules.string, rules.minLength(1), rules.maxLength(255)],
   idMarque: [rules.integer],
+  imageUrl: [rules.string, rules.maxLength(500)],
   active: [rules.boolean]
 });
 
@@ -79,7 +77,6 @@ export const validateModeleSearch = createValidator({
   searchTerm: [rules.required, rules.string, rules.minLength(1), rules.maxLength(100)]
 });
 
-// For route parameters
 export const validateModeleId = (req, res, next) => {
   const id = Number(req.params.id);
   if (!id || id <= 0 || !Number.isInteger(id)) {
@@ -104,7 +101,6 @@ export const validateMarqueId = (req, res, next) => {
   next();
 };
 
-// Query parameter validation
 export const validateModeleQuery = (req, res, next) => {
   const { idMarque, onlyActive } = req.query;
   const errors = {};
