@@ -623,3 +623,283 @@ export const logout = async (req, res, next) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/auth/users/{id}:
+ *   patch:
+ *     summary: Update user information
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *                 example: "Jane Doe"
+ *               email:
+ *                 type: string
+ *                 example: "jane.doe@example.com"
+ *               username:
+ *                 type: string
+ *                 example: "janed"
+ *               idUserSite:
+ *                 type: integer
+ *                 example: 5
+ *               actif:
+ *                 type: boolean
+ *               active:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User not found
+ *       409:
+ *         description: Email or username already exists
+ */
+export const updateUser = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (!userId || userId <= 0) {
+      return next(new AppError('Valid user ID is required', 400));
+    }
+
+    const {
+      fullName = null,
+      email = null,
+      username = null,
+      idUserSite = null,
+      actif = null,
+      active = null
+    } = req.body || {};
+
+    const updatedUser = await authService.updateUser(userId, {
+      fullName,
+      email,
+      username,
+      idUserSite,
+      actif,
+      active
+    });
+
+    if (!updatedUser) {
+      return next(new AppError('User not found', 404));
+    }
+
+    sendSuccess(res, updatedUser, 'User updated successfully');
+  } catch (err) {
+    const { status, message } = mapSqlError(err);
+    next(new AppError(message, status || 500));
+  }
+};
+
+/**
+ * @openapi
+ * /api/auth/users/{id}/password:
+ *   patch:
+ *     summary: Update user password
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPassword
+ *             properties:
+ *               newPassword:
+ *                 type: string
+ *                 example: "NewP@ssw0rd!"
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User not found
+ */
+export const updateUserPassword = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (!userId || userId <= 0) {
+      return next(new AppError('Valid user ID is required', 400));
+    }
+
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) {
+      return next(new AppError('Password must be at least 8 characters', 400));
+    }
+
+    const updatedUser = await authService.updateUserPassword(userId, newPassword);
+
+    if (!updatedUser) {
+      return next(new AppError('User not found', 404));
+    }
+
+    sendSuccess(res, updatedUser, 'Password updated successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
+
+/**
+ * @openapi
+ * /api/auth/users/{id}/activate:
+ *   post:
+ *     summary: Activate user
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User activated successfully
+ *       404:
+ *         description: User not found
+ */
+export const activateUser = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (!userId || userId <= 0) {
+      return next(new AppError('Valid user ID is required', 400));
+    }
+
+    const user = await authService.activateUser(userId);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    sendSuccess(res, user, 'User activated successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
+
+/**
+ * @openapi
+ * /api/auth/users/{id}/deactivate:
+ *   post:
+ *     summary: Deactivate user
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User deactivated successfully
+ *       404:
+ *         description: User not found
+ */
+export const deactivateUser = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (!userId || userId <= 0) {
+      return next(new AppError('Valid user ID is required', 400));
+    }
+
+    const user = await authService.deactivateUser(userId);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    sendSuccess(res, user, 'User deactivated successfully');
+  } catch (err) {
+    next(new AppError(err.message, 500));
+  }
+};
+
+/**
+ * @openapi
+ * /api/auth/users/{id}/site:
+ *   patch:
+ *     summary: Update user site assignment
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idUserSite
+ *             properties:
+ *               idUserSite:
+ *                 type: integer
+ *                 example: 3
+ *     responses:
+ *       200:
+ *         description: User site updated successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User or site not found
+ */
+export const updateUserSiteAssignment = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (!userId || userId <= 0) {
+      return next(new AppError('Valid user ID is required', 400));
+    }
+
+    const { idUserSite } = req.body;
+    if (!idUserSite || idUserSite <= 0) {
+      return next(new AppError('Valid UserSite ID is required', 400));
+    }
+
+    const user = await authService.updateUserSite(userId, idUserSite);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    sendSuccess(res, user, 'User site assignment updated successfully');
+  } catch (err) {
+    const { status, message } = mapSqlError(err);
+    next(new AppError(message, status || 500));
+  }
+};
+
+

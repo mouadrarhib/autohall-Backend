@@ -178,3 +178,22 @@ export const validateUserCompleteCreation = createValidator({
     groupement_name: [rules.required, rules.string],
     site_id: [rules.required, rules.integer],
 });
+
+// User update validation
+export const validateUserUpdate = createValidator({
+  fullName: [rules.string, rules.minLength(2), rules.maxLength(255)],
+  email: [rules.string, rules.maxLength(255), rules.email],
+  username: [rules.string, rules.minLength(3), rules.maxLength(50), rules.username],
+  idUserSite: [rules.integer],
+});
+
+// Password update validation
+export const validatePasswordUpdate = createValidator({
+  newPassword: [rules.required, rules.string, rules.minLength(8), rules.maxLength(128), rules.password],
+});
+
+// User site update validation
+export const validateUserSiteUpdate = createValidator({
+  idUserSite: [rules.required, rules.integer],
+});
+
