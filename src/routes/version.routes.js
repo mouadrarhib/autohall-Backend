@@ -3,20 +3,25 @@
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
 import { errorHandler } from '../middlewares/responseHandler.js';
+
 import {
   validateVersionCreate,
   validateVersionUpdate,
-  validateVersionId
+  validateVersionId,
+  validateVersionQuery
 } from '../middlewares/version/validateInput.js';
+
 import {
   canCreateVersion,
   canReadVersion,
   canUpdateVersion
 } from '../middlewares/version/hasPermission.js';
+
 import * as controller from '../controllers/version.controller.js';
 
 const router = express.Router();
 
+// All routes require authentication
 router.use(isAuth);
 
 // Create version
@@ -31,14 +36,31 @@ router.post(
 router.get(
   '/search',
   canReadVersion,
+  validateVersionQuery,
   controller.searchVersions
 );
 
 // List versions by modele (must be before /:id to avoid route conflicts)
 router.get(
-  '/by-modele',
+  '/by-modele/:idModele',
   canReadVersion,
   controller.listVersionsByModele
+);
+
+// Activate version (must be before /:id to avoid route conflicts)
+router.post(
+  '/:id/activate',
+  validateVersionId,
+  canUpdateVersion,
+  controller.activateVersion
+);
+
+// Deactivate version (must be before /:id to avoid route conflicts)
+router.post(
+  '/:id/deactivate',
+  validateVersionId,
+  canUpdateVersion,
+  controller.deactivateVersion
 );
 
 // Get version by ID
@@ -53,6 +75,7 @@ router.get(
 router.get(
   '/',
   canReadVersion,
+  validateVersionQuery,
   controller.listVersions
 );
 
@@ -63,22 +86,6 @@ router.patch(
   canUpdateVersion,
   validateVersionUpdate,
   controller.updateVersion
-);
-
-// Activate version
-router.post(
-  '/:id/activate',
-  validateVersionId,
-  canUpdateVersion,
-  controller.activateVersion
-);
-
-// Deactivate version
-router.post(
-  '/:id/deactivate',
-  validateVersionId,
-  canUpdateVersion,
-  controller.deactivateVersion
 );
 
 // Error handler for this router
