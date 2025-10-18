@@ -1,20 +1,21 @@
 // src/controllers/version.controller.js
 
 import { AppError, sendSuccess } from '../middlewares/responseHandler.js';
+import { parseBoolean } from '../helpers/queryHelpers.js';
 import * as versionService from '../services/version.service.js';
 
 /**
  * @openapi
  * tags:
  *   - name: Versions
- *     description: Version management operations
+ *     description: Version (car version/trim) management operations
  */
 
 /**
  * @openapi
  * /api/versions:
  *   post:
- *     summary: Create a new Version
+ *     summary: Create a new version
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
@@ -24,42 +25,50 @@ import * as versionService from '../services/version.service.js';
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, idModele, volume, price, tm, margin]
+ *             required:
+ *               - name
+ *               - idModele
+ *               - volume
+ *               - salePrice
+ *               - tmDirect
+ *               - margeInterGroupe
  *             properties:
  *               name:
  *                 type: string
- *                 maxLength: 100
- *                 example: "Version X"
+ *                 maxLength: 255
+ *                 example: "Comfort Plus"
  *               idModele:
  *                 type: integer
  *                 example: 1
  *               volume:
  *                 type: integer
- *                 minimum: 1
+ *                 minimum: 0
  *                 example: 100
- *               price:
+ *               salePrice:
  *                 type: number
  *                 format: decimal
- *                 example: 25000.00
- *               tm:
+ *                 example: 250000.00
+ *                 description: "Price in format 00.00"
+ *               tmDirect:
  *                 type: number
  *                 format: decimal
- *                 maximum: 0.40
- *                 example: 0.15
- *               margin:
+ *                 example: 0.1500
+ *                 description: "Percentage as decimal (0.15 = 15%)"
+ *               margeInterGroupe:
  *                 type: number
  *                 format: decimal
- *                 maximum: 0.40
- *                 example: 0.20
+ *                 example: 0.0500
+ *                 description: "Percentage as decimal (0.05 = 5%)"
+ *               active:
+ *                 type: boolean
+ *                 default: true
  *     responses:
  *       201:
- *         description: Created
+ *         description: Version created successfully
  *       400:
  *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *       404:
+ *         description: Modele not found
  */
 export const createVersion = async (req, res, next) => {
   try {
@@ -74,7 +83,7 @@ export const createVersion = async (req, res, next) => {
  * @openapi
  * /api/versions/{id}:
  *   patch:
- *     summary: Update Version
+ *     summary: Update version (partial update supported)
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
@@ -82,43 +91,41 @@ export const createVersion = async (req, res, next) => {
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: Version ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, idModele, volume, price, tm, margin]
  *             properties:
  *               name:
  *                 type: string
- *                 maxLength: 100
+ *                 example: "Sport Edition"
  *               idModele:
  *                 type: integer
+ *                 example: 2
  *               volume:
  *                 type: integer
- *                 minimum: 1
- *               price:
+ *                 example: 150
+ *               salePrice:
  *                 type: number
- *                 format: decimal
- *               tm:
+ *                 example: 300000.00
+ *               tmDirect:
  *                 type: number
- *                 format: decimal
- *                 maximum: 0.40
- *               margin:
+ *                 example: 0.2000
+ *               margeInterGroupe:
  *                 type: number
- *                 format: decimal
- *                 maximum: 0.40
+ *                 example: 0.0750
+ *               active:
+ *                 type: boolean
  *     responses:
  *       200:
- *         description: Updated
+ *         description: Version updated successfully
  *       404:
- *         description: Not found
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Version not found
  */
 export const updateVersion = async (req, res, next) => {
   try {
@@ -139,7 +146,7 @@ export const updateVersion = async (req, res, next) => {
  * @openapi
  * /api/versions/{id}:
  *   get:
- *     summary: Get Version by ID
+ *     summary: Get version by ID
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
@@ -147,16 +154,14 @@ export const updateVersion = async (req, res, next) => {
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: Version ID
  *     responses:
  *       200:
- *         description: Found
+ *         description: Version retrieved successfully
  *       404:
- *         description: Not found
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Version not found
  */
 export const getVersionById = async (req, res, next) => {
   try {
@@ -177,68 +182,47 @@ export const getVersionById = async (req, res, next) => {
  * @openapi
  * /api/versions:
  *   get:
- *     summary: List Versions with optional filters and pagination
+ *     summary: List versions with pagination
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: idModele
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *           nullable: true
  *         description: Filter by modele ID
  *       - in: query
  *         name: onlyActive
- *         schema: { type: boolean, default: true }
- *         description: Show only active versions
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Filter for active versions only
  *       - in: query
  *         name: page
- *         schema: { type: integer, default: 1 }
+ *         schema:
+ *           type: integer
+ *           default: 1
  *         description: Page number
  *       - in: query
  *         name: pageSize
- *         schema: { type: integer, default: 10 }
- *         description: Number of records per page
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Records per page
  *     responses:
  *       200:
- *         description: Paginated list
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                 pagination:
- *                   type: object
- *                   properties:
- *                     page:
- *                       type: integer
- *                     pageSize:
- *                       type: integer
- *                     totalRecords:
- *                       type: integer
- *                     totalPages:
- *                       type: integer
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Paginated list of versions
  */
 export const listVersions = async (req, res, next) => {
   try {
-    const { idModele, onlyActive } = req.query;
+    const { idModele } = req.query;
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
     
-    const result = await versionService.listVersions(
-      idModele,
-      onlyActive !== 'false',
-      page,
-      pageSize
-    );
-    
+    const result = await versionService.listVersions(idModele, onlyActive, page, pageSize);
     sendSuccess(res, result, 'Versions list retrieved successfully');
   } catch (err) {
     next(new AppError(err.message, 500));
@@ -247,49 +231,49 @@ export const listVersions = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/versions/by-modele:
+ * /api/versions/by-modele/{idModele}:
  *   get:
- *     summary: List Versions by Modele with pagination
+ *     summary: List versions by modele with pagination
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: query
+ *       - in: path
  *         name: idModele
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: Modele ID
  *       - in: query
  *         name: onlyActive
- *         schema: { type: boolean, default: true }
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Filter for active versions only
  *       - in: query
  *         name: page
- *         schema: { type: integer, default: 1 }
+ *         schema:
+ *           type: integer
+ *           default: 1
  *         description: Page number
  *       - in: query
  *         name: pageSize
- *         schema: { type: integer, default: 10 }
- *         description: Number of records per page
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Records per page
  *     responses:
  *       200:
- *         description: Paginated list
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Paginated list of versions for the modele
  */
 export const listVersionsByModele = async (req, res, next) => {
   try {
-    const { idModele, onlyActive } = req.query;
+    const idModele = Number(req.params.idModele);
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
     
-    const result = await versionService.listVersionsByModele(
-      idModele,
-      onlyActive !== 'false',
-      page,
-      pageSize
-    );
-    
+    const result = await versionService.listVersionsByModele(idModele, onlyActive, page, pageSize);
     sendSuccess(res, result, 'Versions by modele retrieved successfully');
   } catch (err) {
     next(new AppError(err.message, 500));
@@ -300,35 +284,56 @@ export const listVersionsByModele = async (req, res, next) => {
  * @openapi
  * /api/versions/search:
  *   get:
- *     summary: Search Versions
+ *     summary: Search versions with pagination
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: q
- *         schema: { type: string }
- *         description: Search query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search term
  *       - in: query
  *         name: idModele
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *           nullable: true
  *         description: Filter by modele ID
  *       - in: query
  *         name: onlyActive
- *         schema: { type: boolean, default: true }
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Filter for active versions only
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Records per page
  *     responses:
  *       200:
- *         description: Search results
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Paginated search results
+ *       400:
+ *         description: Invalid or missing search query
  */
 export const searchVersions = async (req, res, next) => {
   try {
-    const { q, idModele, onlyActive } = req.query;
-    const rows = await versionService.searchVersions(q || '', idModele, onlyActive !== 'false');
-    sendSuccess(res, rows, 'Search completed successfully');
+    const { q, idModele } = req.query;
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+    
+    const result = await versionService.searchVersions(q || '', idModele, onlyActive, page, pageSize);
+    sendSuccess(res, result, 'Search completed successfully');
   } catch (err) {
     next(new AppError(err.message, 500));
   }
@@ -338,7 +343,7 @@ export const searchVersions = async (req, res, next) => {
  * @openapi
  * /api/versions/{id}/activate:
  *   post:
- *     summary: Activate Version
+ *     summary: Activate version
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
@@ -346,16 +351,14 @@ export const searchVersions = async (req, res, next) => {
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: Version ID
  *     responses:
  *       200:
- *         description: Activated
+ *         description: Version activated successfully
  *       404:
- *         description: Not found
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Version not found
  */
 export const activateVersion = async (req, res, next) => {
   try {
@@ -376,7 +379,7 @@ export const activateVersion = async (req, res, next) => {
  * @openapi
  * /api/versions/{id}/deactivate:
  *   post:
- *     summary: Deactivate Version
+ *     summary: Deactivate version
  *     tags: [Versions]
  *     security:
  *       - bearerAuth: []
@@ -384,16 +387,14 @@ export const activateVersion = async (req, res, next) => {
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: integer }
+ *         schema:
+ *           type: integer
+ *         description: Version ID
  *     responses:
  *       200:
- *         description: Deactivated
+ *         description: Version deactivated successfully
  *       404:
- *         description: Not found
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *         description: Version not found
  */
 export const deactivateVersion = async (req, res, next) => {
   try {
