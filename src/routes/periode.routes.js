@@ -21,6 +21,38 @@ const router = express.Router();
 
 router.use(isAuth);
 
+// IMPORTANT: Static routes MUST come before parameterized routes like /:id
+
+// List active periodes (MOVED TO TOP)
+router.get(
+  '/',
+  canReadPeriode,
+  controller.listActivePeriodes
+);
+
+// List by type
+router.get(
+  '/by-type',
+  canReadPeriode,
+  validatePeriodeListByType,
+  controller.listPeriodesByType
+);
+
+// List active years
+router.get(
+  '/years',
+  canReadPeriode,
+  controller.listYears
+);
+
+// List periodes by specific year
+router.get(
+  '/years/:year',
+  canReadPeriode,
+  validatePeriodeYearParam,
+  controller.listPeriodesByYear
+);
+
 // Create
 router.post(
   '/',
@@ -29,42 +61,12 @@ router.post(
   controller.createPeriode
 );
 
-// List by type (must be before /:id to avoid route conflicts)
-router.get(
-  '/by-type',
-  canReadPeriode,
-  validatePeriodeListByType,
-  controller.listPeriodesByType
-);
-
-// List active years (must be before /:id to avoid route conflicts)
-router.get(
-  '/years',
-  canReadPeriode,
-  controller.listYears
-);
-
-// List periodes by specific year (must be before /:id to avoid route conflicts)
-router.get(
-  '/years/:year',
-  canReadPeriode,
-  validatePeriodeYearParam,
-  controller.listPeriodesByYear
-);
-
-// Get active by id
+// Get by ID (MUST come after all static GET routes)
 router.get(
   '/:id',
   validatePeriodeId,
   canReadPeriode,
   controller.getPeriodeById
-);
-
-// List active
-router.get(
-  '/',
-  canReadPeriode,
-  controller.listActivePeriodes
 );
 
 // Update

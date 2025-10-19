@@ -6,13 +6,13 @@ import * as typePeriodeService from '../services/typeperiode.service.js';
 /**
  * @openapi
  * tags:
- *   - name: TypePeriodes
+ *   - name: TypePeriode
  *     description: TypePeriode management operations
  */
 
 /**
  * @openapi
- * /api/type-periodes:
+ * /api/type-periode:
  *   post:
  *     summary: Create a new TypePeriode
  *     tags: [TypePeriodes]
@@ -43,7 +43,7 @@ export const createTypePeriode = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/type-periodes/{id}:
+ * /api/type-periode/{id}:
  *   get:
  *     summary: Get active TypePeriode by ID
  *     tags: [TypePeriodes]
@@ -73,7 +73,7 @@ export const getTypePeriodeById = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/type-periodes:
+ * /api/type-periode:
  *   get:
  *     summary: List active TypePeriodes
  *     tags: [TypePeriodes]
@@ -91,7 +91,7 @@ export const listActiveTypePeriodes = async (_req, res, next) => {
 
 /**
  * @openapi
- * /api/type-periodes/{id}:
+ * /api/type-periode/{id}:
  *   patch:
  *     summary: Update TypePeriode
  *     tags: [TypePeriodes]
@@ -133,7 +133,7 @@ export const updateTypePeriode = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/type-periodes/{id}/activate:
+ * /api/type-periode/{id}/activate:
  *   post:
  *     summary: Activate TypePeriode
  *     tags: [TypePeriodes]
@@ -155,7 +155,7 @@ export const activateTypePeriode = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/type-periodes/{id}/deactivate:
+ * /api/type-periode/{id}/deactivate:
  *   post:
  *     summary: Deactivate TypePeriode
  *     tags: [TypePeriodes]

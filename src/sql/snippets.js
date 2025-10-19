@@ -449,21 +449,25 @@ export const SQL = {
 
   OBJECTIF: {
     OBJECTIF_CREATE: `
-      EXEC dbo.sp_Objectif_Create
-        @userId = :userId,
-        @groupementId = :groupementId,
-        @siteId = :siteId,
-        @periodeId = :periodeId,
-        @typeVenteId = :typeVenteId,
-        @typeObjectifId = :typeObjectifId,
-        @marqueId = :marqueId,
-        @modeleId = :modeleId,
-        @versionId = :versionId,
-        @volume = :volume,
-        @SalePrice = :SalePrice,
-        @TMDirect = :TMDirect,
-        @MargeInterGroupe = :MargeInterGroupe
+DECLARE @NewId INT;
+EXEC dbo.sp_Objectif_Create
+  @userId = :userId,
+  @groupementId = :groupementId,
+  @siteId = :siteId,
+  @periodeId = :periodeId,
+  @typeVenteId = :typeVenteId,
+  @typeObjectifId = :typeObjectifId,
+  @marqueId = :marqueId,
+  @modeleId = :modeleId,
+  @versionId = :versionId,
+  @volume = :volume,
+  @SalePrice = :SalePrice,
+  @TMDirect = :TMDirect,
+  @MargeInterGroupe = :MargeInterGroupe,
+  @newId = @NewId OUTPUT;
+SELECT id = @NewId;
     `,
+
     OBJECTIF_UPDATE: `
       EXEC dbo.sp_Objectif_Update
         @id = :id,
