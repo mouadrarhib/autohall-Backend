@@ -12,7 +12,7 @@ import * as periodeService from '../services/periode.service.js';
 
 /**
  * @openapi
- * /api/periodes:
+ * /api/periode:
  *   post:
  *     summary: Create a new periode
  *     tags: [Periodes]
@@ -66,7 +66,7 @@ export const createPeriode = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/periodes/{id}:
+ * /api/periode/{id}:
  *   patch:
  *     summary: Update a periode
  *     tags: [Periodes]
@@ -124,7 +124,7 @@ export const updatePeriode = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/periodes/{id}:
+ * /api/periode/{id}:
  *   get:
  *     summary: Get periode by ID
  *     tags: [Periodes]
@@ -159,7 +159,7 @@ export const getPeriodeById = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/periodes:
+ * /api/periode:
  *   get:
  *     summary: List all active periodes with pagination
  *     tags: [Periodes]
@@ -193,7 +193,7 @@ export const listActivePeriodes = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/periodes/{id}/activate:
+ * /api/periode/{id}/activate:
  *   post:
  *     summary: Activate a periode
  *     tags: [Periodes]
@@ -228,7 +228,7 @@ export const activatePeriode = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/periodes/{id}/deactivate:
+ * /api/periode/{id}/deactivate:
  *   post:
  *     summary: Deactivate a periode
  *     tags: [Periodes]
@@ -263,7 +263,7 @@ export const deactivatePeriode = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/periodes/by-type:
+ * /api/periode/by-type:
  *   get:
  *     summary: List periodes by type with pagination
  *     tags: [Periodes]
@@ -329,7 +329,7 @@ export const listPeriodesByType = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/periodes/years:
+ * /api/periode/years:
  *   get:
  *     summary: List distinct years with pagination
  *     tags: [Periodes]
@@ -363,7 +363,7 @@ export const listYears = async (req, res, next) => {
 
 /**
  * @openapi
- * /api/periodes/by-year:
+ * /api/periode/by-year:
  *   get:
  *     summary: List periodes by year with pagination
  *     tags: [Periodes]
