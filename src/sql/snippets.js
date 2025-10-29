@@ -119,8 +119,6 @@ export const SQL = {
   MODELE_DELETE: 'EXEC dbo.sp_Modele_Delete @Id=:id',
   },
 
-
-
   FILIALE: {
     FILIALE_CREATE: 'EXEC dbo.sp_InsertFiliale @name=:name, @active=:active',
     FILIALE_GET_BY_ID: 'EXEC dbo.sp_GetFilialeById @id=:id',
@@ -133,29 +131,6 @@ export const SQL = {
     FILIALE_UPDATE: 'EXEC dbo.sp_UpdateFiliale @id=:id, @name=:name, @active=:active',
   },
 
-
-  MODELE: {
-  MODELE_CREATE: `
-    DECLARE @NewId INT;
-    EXEC dbo.sp_Modele_Create
-      @Name=:name,
-      @IdMarque=:idMarque,
-      @ImageUrl=:imageUrl,
-      @Active=:active,
-      @NewModeleId=@NewId OUTPUT;
-    SELECT id=@NewId;
-  `,
-  MODELE_GET_BY_ID: 'EXEC dbo.sp_Modele_GetById @Id=:id',
-  MODELE_LIST: 'EXEC dbo.sp_Modele_List @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
-  MODELE_LIST_BY_MARQUE: 'EXEC dbo.sp_Modele_ListByMarque @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
-  MODELE_SEARCH: 'EXEC dbo.sp_Modele_Search @q=:q, @IdMarque=:idMarque, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
-  MODELE_UPDATE: 'EXEC dbo.sp_Modele_Update @Id=:id, @Name=:name, @IdMarque=:idMarque, @ImageUrl=:imageUrl, @Active=:active',
-  MODELE_ACTIVATE: 'EXEC dbo.sp_Modele_Activate @Id=:id',
-  MODELE_DEACTIVATE: 'EXEC dbo.sp_Modele_Deactivate @Id=:id',
-  MODELE_DELETE: 'EXEC dbo.sp_Modele_Delete @Id=:id',
-  },
-
-
   VERSION: {
   VERSION_CREATE: `
     DECLARE @NewId INT;
@@ -166,7 +141,7 @@ export const SQL = {
       @Volume = :volume,
       @SalePrice = :salePrice,
       @TMDirect = :tmDirect,
-      @MargeInterGroupe = :margeInterGroupe,
+      @TMInterGroupe = :tmInterGroupe,
       @NewVersionId = @NewId OUTPUT;
     SELECT id=@NewId;
   `,
@@ -179,35 +154,59 @@ export const SQL = {
       @Volume = :volume,
       @SalePrice = :salePrice,
       @TMDirect = :tmDirect,
-      @MargeInterGroupe = :margeInterGroupe
+      @TMInterGroupe = :tmInterGroupe
   `,
-  VERSION_GET_BY_ID: `EXEC dbo.sp_Version_GetById @Id = :id`,
+  VERSION_GET_BY_ID: `SELECT * FROM dbo.v_version WHERE id = :id`,
+  
+  // Updated to use v_version view with pagination
   VERSION_LIST: `
-    EXEC dbo.sp_Version_List
-      @IdModele = :idModele,
-      @OnlyActive = :onlyActive,
-      @pageNumber = :pageNumber,
-      @pageSize = :pageSize
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_version
+      WHERE (:idModele IS NULL OR idModele = :idModele)
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
   `,
+  
+  // Updated to use v_version view with pagination
   VERSION_LIST_BY_MODELE: `
-    EXEC dbo.sp_Version_ListByModele
-      @IdModele = :idModele,
-      @OnlyActive = :onlyActive,
-      @pageNumber = :pageNumber,
-      @pageSize = :pageSize
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_version
+      WHERE idModele = :idModele
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
   `,
+  
+  // Updated to use v_version view with pagination
   VERSION_SEARCH: `
-    EXEC dbo.sp_Version_Search
-      @q = :q,
-      @IdModele = :idModele,
-      @OnlyActive = :onlyActive,
-      @pageNumber = :pageNumber,
-      @pageSize = :pageSize
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_version
+      WHERE nom LIKE '%' + :q + '%'
+        AND (:idModele IS NULL OR idModele = :idModele)
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
   `,
+  
   VERSION_ACTIVATE: `EXEC dbo.sp_Version_Activate @Id = :id`,
   VERSION_DEACTIVATE: `EXEC dbo.sp_Version_Deactivate @Id = :id`
   },
-
 
   SUCCURSALE: {
   SUCCURSALE_CREATE: `
@@ -581,15 +580,131 @@ SELECT id = @NewId;
       @NewMarqueId=@NewId OUTPUT;
     SELECT id=@NewId;
   `,
-  MARQUE_GET_BY_ID: 'EXEC dbo.sp_Marque_GetById @Id=:id',
-  MARQUE_LIST: 'EXEC dbo.sp_Marque_List @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
-  MARQUE_LIST_BY_FILIALE: 'EXEC dbo.sp_Marque_ListByFiliale @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
-  MARQUE_SEARCH: 'EXEC dbo.sp_Marque_Search @q=:q, @IdFiliale=:idFiliale, @OnlyActive=:onlyActive, @pageNumber=:pageNumber, @pageSize=:pageSize',
+  MARQUE_GET_BY_ID: 'SELECT * FROM dbo.v_marque WHERE id = :id',
+  
+  // Updated to use v_marque view with pagination
+  MARQUE_LIST: `
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_marque
+      WHERE (:idFiliale IS NULL OR idFiliale = :idFiliale)
+        AND (:onlyActive = 0 OR active = 1)
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
+  `,
+  
+  // Updated to use v_marque view with pagination
+  MARQUE_LIST_BY_FILIALE: `
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_marque
+      WHERE idFiliale = :idFiliale
+        AND (:onlyActive = 0 OR active = 1)
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
+  `,
+  
+  // Updated to use v_marque view with pagination
+  MARQUE_SEARCH: `
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_marque
+      WHERE nom LIKE '%' + :q + '%'
+        AND (:idFiliale IS NULL OR idFiliale = :idFiliale)
+        AND (:onlyActive = 0 OR active = 1)
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
+  `,
+  
   MARQUE_UPDATE: 'EXEC dbo.sp_Marque_Update @Id=:id, @Name=:name, @IdFiliale=:idFiliale, @ImageUrl=:imageUrl, @Active=:active',
   MARQUE_ACTIVATE: 'EXEC dbo.sp_Marque_Activate @Id=:id',
   MARQUE_DEACTIVATE: 'EXEC dbo.sp_Marque_Deactivate @Id=:id',
   MARQUE_DELETE: 'EXEC dbo.sp_Marque_Delete @Id=:id',
 },
+
+ MODELE: {
+  MODELE_CREATE: `
+    DECLARE @NewId INT;
+    EXEC dbo.sp_Modele_Create
+      @Name=:name,
+      @IdMarque=:idMarque,
+      @ImageUrl=:imageUrl,
+      @Active=:active,
+      @NewModeleId=@NewId OUTPUT;
+    SELECT id=@NewId;
+  `,
+  MODELE_GET_BY_ID: 'SELECT * FROM dbo.v_modele WHERE id = :id',
+  
+  // Updated to use v_modele view with pagination
+  MODELE_LIST: `
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_modele
+      WHERE (:idMarque IS NULL OR idMarque = :idMarque)
+        AND (:onlyActive = 0 OR active = 1)
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
+  `,
+  
+  // Updated to use v_modele view with pagination
+  MODELE_LIST_BY_MARQUE: `
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_modele
+      WHERE idMarque = :idMarque
+        AND (:onlyActive = 0 OR active = 1)
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
+  `,
+  
+  // Updated to use v_modele view with pagination
+  MODELE_SEARCH: `
+    SELECT *
+    FROM (
+      SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY nom) AS RowNum,
+        COUNT(*) OVER() AS TotalRecords
+      FROM dbo.v_modele
+      WHERE nom LIKE '%' + :q + '%'
+        AND (:idMarque IS NULL OR idMarque = :idMarque)
+        AND (:onlyActive = 0 OR active = 1)
+    ) AS Results
+    WHERE RowNum BETWEEN ((:pageNumber - 1) * :pageSize + 1) AND (:pageNumber * :pageSize)
+    ORDER BY nom
+  `,
+  
+  MODELE_UPDATE: 'EXEC dbo.sp_Modele_Update @Id=:id, @Name=:name, @IdMarque=:idMarque, @ImageUrl=:imageUrl, @Active=:active',
+  MODELE_ACTIVATE: 'EXEC dbo.sp_Modele_Activate @Id=:id',
+  MODELE_DEACTIVATE: 'EXEC dbo.sp_Modele_Deactivate @Id=:id',
+  MODELE_DELETE: 'EXEC dbo.sp_Modele_Delete @Id=:id',
+ },
+
 
 
 

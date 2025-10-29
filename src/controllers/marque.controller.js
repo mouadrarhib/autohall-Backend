@@ -102,6 +102,7 @@ export const getMarqueById = async (req, res, next) => {
  *         schema:
  *           type: integer
  *           nullable: true
+ *         description: Optional - Filter by filiale ID
  *       - in: query
  *         name: onlyActive
  *         schema:
@@ -123,17 +124,19 @@ export const getMarqueById = async (req, res, next) => {
  */
 export const listMarques = async (req, res, next) => {
   try {
-    const { idFiliale } = req.query;
+    // Parse idFiliale as optional - will be null if not provided
+    const idFiliale = req.query.idFiliale ? Number(req.query.idFiliale) : null;
     const onlyActive = parseBoolean(req.query.onlyActive) !== 0; // Default to true
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
-    
+
     const result = await marqueService.listMarques(idFiliale, onlyActive, page, pageSize);
     sendSuccess(res, result, 'Marques list retrieved successfully');
   } catch (err) {
     next(new AppError(err.message, 500));
   }
 };
+
 
 /**
  * @openapi
