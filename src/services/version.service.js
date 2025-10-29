@@ -21,7 +21,7 @@ export async function createVersion(data) {
     volume: Number(data.volume || 0),
     salePrice: Number(data.salePrice || 0),
     tmDirect: Number(data.tmDirect || 0),
-    margeInterGroupe: Number(data.margeInterGroupe || 0)
+    tmInterGroupe: Number(data.tmInterGroupe || 0)
   });
 
   try {
@@ -57,44 +57,45 @@ export async function updateVersion(id, data) {
     volume: data.volume !== undefined ? Number(data.volume) : null,
     salePrice: data.salePrice !== undefined ? Number(data.salePrice) : null,
     tmDirect: data.tmDirect !== undefined ? Number(data.tmDirect) : null,
-    margeInterGroupe: data.margeInterGroupe !== undefined ? Number(data.margeInterGroupe) : null
+    tmInterGroupe: data.tmInterGroupe !== undefined ? Number(data.tmInterGroupe) : null
   });
 
   const rows = await sequelize.query(SQL.VERSION.VERSION_UPDATE, {
     replacements: params,
     type: QueryTypes.SELECT
   });
-  
+
   return getFirstResult(rows);
 }
 
 /**
- * Get version by ID
+ * Get version by ID using v_version view
  */
 export async function getVersionById(id) {
   const rows = await sequelize.query(SQL.VERSION.VERSION_GET_BY_ID, {
     replacements: { id: Number(id) },
     type: QueryTypes.SELECT
   });
+
   return getFirstResult(rows);
 }
 
 /**
- * List versions with pagination
+ * List versions with pagination using v_version view
  */
 export async function listVersions(idModele = null, onlyActive = true, page = 1, pageSize = 10) {
-  const params = prepareStoredProcParams({
+  const params = {
     idModele: idModele ? Number(idModele) : null,
-    onlyActive: onlyActive ? 1 : 0,
     pageNumber: Number(page),
     pageSize: Number(pageSize)
-  });
+  };
 
   try {
     const rows = await sequelize.query(SQL.VERSION.VERSION_LIST, {
       replacements: params,
       type: QueryTypes.SELECT
     });
+
     return processPaginatedResult(rows, page, pageSize);
   } catch (error) {
     console.error('Error in listVersions service:', error);
@@ -103,21 +104,21 @@ export async function listVersions(idModele = null, onlyActive = true, page = 1,
 }
 
 /**
- * List versions by modele with pagination
+ * List versions by modele with pagination using v_version view
  */
 export async function listVersionsByModele(idModele, onlyActive = true, page = 1, pageSize = 10) {
-  const params = prepareStoredProcParams({
+  const params = {
     idModele: Number(idModele),
-    onlyActive: onlyActive ? 1 : 0,
     pageNumber: Number(page),
     pageSize: Number(pageSize)
-  });
+  };
 
   try {
     const rows = await sequelize.query(SQL.VERSION.VERSION_LIST_BY_MODELE, {
       replacements: params,
       type: QueryTypes.SELECT
     });
+
     return processPaginatedResult(rows, page, pageSize);
   } catch (error) {
     console.error('Error in listVersionsByModele service:', error);
@@ -126,10 +127,11 @@ export async function listVersionsByModele(idModele, onlyActive = true, page = 1
 }
 
 /**
- * Search versions with pagination
+ * Search versions with pagination using v_version view
  */
 export async function searchVersions(searchTerm, idModele = null, onlyActive = true, page = 1, pageSize = 10) {
   const sanitizedSearch = sanitizeSearchQuery(searchTerm);
+
   if (!sanitizedSearch) {
     return {
       data: [],
@@ -142,19 +144,19 @@ export async function searchVersions(searchTerm, idModele = null, onlyActive = t
     };
   }
 
-  const params = prepareStoredProcParams({
+  const params = {
     q: sanitizedSearch,
     idModele: idModele ? Number(idModele) : null,
-    onlyActive: onlyActive ? 1 : 0,
     pageNumber: Number(page),
     pageSize: Number(pageSize)
-  });
+  };
 
   try {
     const rows = await sequelize.query(SQL.VERSION.VERSION_SEARCH, {
       replacements: params,
       type: QueryTypes.SELECT
     });
+
     return processPaginatedResult(rows, page, pageSize);
   } catch (error) {
     console.error('Error in searchVersions service:', error);
@@ -170,6 +172,7 @@ export async function activateVersion(id) {
     replacements: { id: Number(id) },
     type: QueryTypes.SELECT
   });
+
   return getFirstResult(rows);
 }
 
@@ -181,5 +184,6 @@ export async function deactivateVersion(id) {
     replacements: { id: Number(id) },
     type: QueryTypes.SELECT
   });
+
   return getFirstResult(rows);
 }

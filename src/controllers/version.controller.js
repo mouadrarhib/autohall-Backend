@@ -31,7 +31,7 @@ import * as versionService from '../services/version.service.js';
  *               - volume
  *               - salePrice
  *               - tmDirect
- *               - margeInterGroupe
+ *               - tmInterGroupe
  *             properties:
  *               name:
  *                 type: string
@@ -52,13 +52,13 @@ import * as versionService from '../services/version.service.js';
  *               tmDirect:
  *                 type: number
  *                 format: decimal
- *                 example: 0.1500
- *                 description: "Percentage as decimal (0.15 = 15%)"
- *               margeInterGroupe:
+ *                 example: 15.00
+ *                 description: "Percentage as face value (15.00 = 15%)"
+ *               tmInterGroupe:
  *                 type: number
  *                 format: decimal
- *                 example: 0.0500
- *                 description: "Percentage as decimal (0.05 = 5%)"
+ *                 example: 5.00
+ *                 description: "Percentage as face value (5.00 = 5%)"
  *               active:
  *                 type: boolean
  *                 default: true
@@ -115,10 +115,10 @@ export const createVersion = async (req, res, next) => {
  *                 example: 300000.00
  *               tmDirect:
  *                 type: number
- *                 example: 0.2000
- *               margeInterGroupe:
+ *                 example: 20.00
+ *               tmInterGroupe:
  *                 type: number
- *                 example: 0.0750
+ *                 example: 7.50
  *               active:
  *                 type: boolean
  *     responses:
@@ -131,11 +131,9 @@ export const updateVersion = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const result = await versionService.updateVersion(id, req.body);
-    
     if (!result) {
       return next(new AppError('Version not found', 404));
     }
-    
     sendSuccess(res, result, 'Version updated successfully');
   } catch (err) {
     next(new AppError(err.message, err.statusCode || 500));
@@ -167,11 +165,9 @@ export const getVersionById = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const row = await versionService.getVersionById(id);
-    
     if (!row) {
       return next(new AppError('Version not found', 404));
     }
-    
     sendSuccess(res, row, 'Version retrieved successfully');
   } catch (err) {
     next(new AppError(err.message, 500));
@@ -221,7 +217,7 @@ export const listVersions = async (req, res, next) => {
     const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
-    
+
     const result = await versionService.listVersions(idModele, onlyActive, page, pageSize);
     sendSuccess(res, result, 'Versions list retrieved successfully');
   } catch (err) {
@@ -272,7 +268,7 @@ export const listVersionsByModele = async (req, res, next) => {
     const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
-    
+
     const result = await versionService.listVersionsByModele(idModele, onlyActive, page, pageSize);
     sendSuccess(res, result, 'Versions by modele retrieved successfully');
   } catch (err) {
@@ -331,7 +327,7 @@ export const searchVersions = async (req, res, next) => {
     const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
     const page = Number(req.query.page || 1);
     const pageSize = Number(req.query.pageSize || 10);
-    
+
     const result = await versionService.searchVersions(q || '', idModele, onlyActive, page, pageSize);
     sendSuccess(res, result, 'Search completed successfully');
   } catch (err) {
@@ -364,11 +360,9 @@ export const activateVersion = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const result = await versionService.activateVersion(id);
-    
     if (!result) {
       return next(new AppError('Version not found', 404));
     }
-    
     sendSuccess(res, result, 'Version activated successfully');
   } catch (err) {
     next(new AppError(err.message, err.statusCode || 500));
@@ -400,11 +394,9 @@ export const deactivateVersion = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const result = await versionService.deactivateVersion(id);
-    
     if (!result) {
       return next(new AppError('Version not found', 404));
     }
-    
     sendSuccess(res, result, 'Version deactivated successfully');
   } catch (err) {
     next(new AppError(err.message, err.statusCode || 500));

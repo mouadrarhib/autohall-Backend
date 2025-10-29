@@ -12,10 +12,6 @@ import { processPaginatedResult } from '../helpers/queryHelpers.js';
 
 /**
  * Create a new marque
- * @param {string} name
- * @param {number} idFiliale
- * @param {string|null} imageUrl
- * @param {boolean} active
  */
 export async function createMarque(name, idFiliale, imageUrl = null, active = true) {
   const params = prepareStoredProcParams({
@@ -53,32 +49,34 @@ export async function createMarque(name, idFiliale, imageUrl = null, active = tr
 }
 
 /**
- * Get marque by ID
+ * Get marque by ID using v_marque view
  */
 export async function getMarqueById(id) {
   const rows = await sequelize.query(SQL.MARQUE.MARQUE_GET_BY_ID, {
     replacements: { id: Number(id) },
     type: QueryTypes.SELECT
   });
+
   return getFirstResult(rows);
 }
 
 /**
- * List marques with optional filters and pagination
+ * List marques with optional filters and pagination using v_marque view
  */
 export async function listMarques(idFiliale = null, onlyActive = true, page = 1, pageSize = 10) {
-  const params = prepareStoredProcParams({
+  const params = {
     idFiliale: idFiliale ? Number(idFiliale) : null,
     onlyActive: onlyActive ? 1 : 0,
     pageNumber: Number(page),
     pageSize: Number(pageSize)
-  });
+  };
 
   try {
     const rows = await sequelize.query(SQL.MARQUE.MARQUE_LIST, {
       replacements: params,
       type: QueryTypes.SELECT
     });
+
     return processPaginatedResult(rows, page, pageSize);
   } catch (error) {
     console.error('Error in listMarques service:', error);
@@ -87,21 +85,22 @@ export async function listMarques(idFiliale = null, onlyActive = true, page = 1,
 }
 
 /**
- * List marques by filiale with pagination
+ * List marques by filiale with pagination using v_marque view
  */
 export async function listMarquesByFiliale(idFiliale, onlyActive = true, page = 1, pageSize = 10) {
-  const params = prepareStoredProcParams({
+  const params = {
     idFiliale: Number(idFiliale),
     onlyActive: onlyActive ? 1 : 0,
     pageNumber: Number(page),
     pageSize: Number(pageSize)
-  });
+  };
 
   try {
     const rows = await sequelize.query(SQL.MARQUE.MARQUE_LIST_BY_FILIALE, {
       replacements: params,
       type: QueryTypes.SELECT
     });
+
     return processPaginatedResult(rows, page, pageSize);
   } catch (error) {
     console.error('Error in listMarquesByFiliale service:', error);
@@ -110,10 +109,11 @@ export async function listMarquesByFiliale(idFiliale, onlyActive = true, page = 
 }
 
 /**
- * Search marques with pagination
+ * Search marques with pagination using v_marque view
  */
 export async function searchMarques(searchTerm, idFiliale = null, onlyActive = true, page = 1, pageSize = 10) {
   const sanitizedSearch = sanitizeSearchQuery(searchTerm);
+
   if (!sanitizedSearch) {
     return {
       data: [],
@@ -126,19 +126,20 @@ export async function searchMarques(searchTerm, idFiliale = null, onlyActive = t
     };
   }
 
-  const params = prepareStoredProcParams({
+  const params = {
     q: sanitizedSearch,
     idFiliale: idFiliale ? Number(idFiliale) : null,
     onlyActive: onlyActive ? 1 : 0,
     pageNumber: Number(page),
     pageSize: Number(pageSize)
-  });
+  };
 
   try {
     const rows = await sequelize.query(SQL.MARQUE.MARQUE_SEARCH, {
       replacements: params,
       type: QueryTypes.SELECT
     });
+
     return processPaginatedResult(rows, page, pageSize);
   } catch (error) {
     console.error('Error in searchMarques service:', error);
@@ -163,6 +164,7 @@ export async function updateMarque(id, name = null, idFiliale = null, imageUrl =
       replacements: params,
       type: QueryTypes.SELECT
     });
+
     return getFirstResult(rows);
   } catch (error) {
     console.error('Error updating marque:', error);
@@ -179,6 +181,7 @@ export async function activateMarque(id) {
       replacements: { id: Number(id) },
       type: QueryTypes.SELECT
     });
+
     return getFirstResult(rows);
   } catch (error) {
     console.error('Error activating marque:', error);
@@ -195,6 +198,7 @@ export async function deactivateMarque(id) {
       replacements: { id: Number(id) },
       type: QueryTypes.SELECT
     });
+
     return getFirstResult(rows);
   } catch (error) {
     console.error('Error deactivating marque:', error);
@@ -211,9 +215,11 @@ export async function deleteMarque(id) {
       replacements: { id: Number(id) },
       type: QueryTypes.RAW
     });
+
     return { id: Number(id), deleted: true };
   } catch (error) {
     console.error('Error deleting marque:', error);
     throw error;
   }
 }
+  

@@ -82,9 +82,30 @@ export const validateMarqueUpdate = createValidator({
   active: [rules.boolean]
 });
 
-export const validateMarqueSearch = createValidator({
-  searchTerm: [rules.required, rules.string, rules.minLength(1), rules.maxLength(100)]
-});
+export const validateMarqueSearch = (req, res, next) => {
+  const search = req.query.search?.trim();
+  const q = req.query.q?.trim();
+  
+  if (!search && !q) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: { searchTerm: 'Either search or q parameter is required' }
+    });
+  }
+  
+  const searchTerm = search || q;
+  
+  if (searchTerm.length < 1 || searchTerm.length > 100) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: { searchTerm: 'Search term must be between 1 and 100 characters' }
+    });
+  }
+  
+  next();
+};
+
+
 
 // For route parameters
 export const validateMarqueId = (req, res, next) => {

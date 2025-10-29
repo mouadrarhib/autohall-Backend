@@ -74,8 +74,9 @@ export const validateModeleUpdate = createValidator({
 });
 
 export const validateModeleSearch = createValidator({
-  searchTerm: [rules.required, rules.string, rules.minLength(1), rules.maxLength(100)]
+  q: [rules.required, rules.string, rules.minLength(1), rules.maxLength(100)]
 });
+
 
 export const validateModeleId = (req, res, next) => {
   const id = Number(req.params.id);
