@@ -1,52 +1,79 @@
 // src/middlewares/auditlog/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
 /**
- * Permission checking middleware specifically for AuditLog operations
+ * Role checking middleware specifically for AuditLog operations
  */
 
-// Permission constants for audit log management
-export const AUDITLOG_PERMISSIONS = {
-  AUDITLOG_READ: 'AUDITLOG_READ',
-  AUDITLOG_WRITE: 'AUDITLOG_WRITE',
-  AUDITLOG_EXPORT: 'AUDITLOG_EXPORT',
-  AUDITLOG_PURGE: 'AUDITLOG_PURGE',
-  AUDITLOG_ANALYTICS: 'AUDITLOG_ANALYTICS'
+// Allowed roles for audit log management
+export const AUDITLOG_ROLES = {
+  ALLOWED_ROLES: ['administrateur fonctionnel']
 };
 
 /**
- * Generic permission checker for audit log operations
- * @param {string} requiredPermission - Permission name required
+ * Generic role checker for audit log operations
+ * @param {Array<string>} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
-const requireAuditLogPermission = (requiredPermission) => {
+const requireAuditLogRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
-        return res.status(403).json({ 
-          error: 'Insufficient permissions', 
-          required: requiredPermission 
+      // Get user's roles
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      // Check if user has any of the required roles
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || 
+                        userRole.roleName || 
+                        userRole.RoleName || 
+                        userRole.Name || 
+                        userRole.role_name ||
+                        '';
+
+        if (!roleName) return false;
+
+        return allowedRoles.some(allowedRole => 
+          roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim()
+        );
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles,
+          userHasRoles: userRoles.map(r => 
+            r.name || r.roleName || r.RoleName || r.Name || r.role_name || 'unknown'
+          )
         });
       }
 
       next();
     } catch (err) {
-      console.error('AuditLog permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('AuditLog role check error:', err);
+      return res.status(500).json({ 
+        error: 'Role check failed',
+        details: err.message
+      });
     }
   };
 };
 
-// Specific permission middleware for audit log management
-export const canReadAuditLog = requireAuditLogPermission(AUDITLOG_PERMISSIONS.AUDITLOG_READ);
-export const canWriteAuditLog = requireAuditLogPermission(AUDITLOG_PERMISSIONS.AUDITLOG_WRITE);
-export const canExportAuditLog = requireAuditLogPermission(AUDITLOG_PERMISSIONS.AUDITLOG_EXPORT);
-export const canPurgeAuditLog = requireAuditLogPermission(AUDITLOG_PERMISSIONS.AUDITLOG_PURGE);
-export const canAnalyzeAuditLog = requireAuditLogPermission(AUDITLOG_PERMISSIONS.AUDITLOG_ANALYTICS);
+// Specific role middleware for audit log management
+// All operations require 'administrateur fonctionnel' role
+export const canReadAuditLog = requireAuditLogRole(AUDITLOG_ROLES.ALLOWED_ROLES);
+export const canWriteAuditLog = requireAuditLogRole(AUDITLOG_ROLES.ALLOWED_ROLES);
+export const canExportAuditLog = requireAuditLogRole(AUDITLOG_ROLES.ALLOWED_ROLES);
+export const canPurgeAuditLog = requireAuditLogRole(AUDITLOG_ROLES.ALLOWED_ROLES);
+export const canAnalyzeAuditLog = requireAuditLogRole(AUDITLOG_ROLES.ALLOWED_ROLES);

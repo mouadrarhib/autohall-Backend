@@ -1,41 +1,61 @@
 // src/middlewares/userRole/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
-export const USER_ROLE_PERMISSIONS = {
-  USER_ROLE_CREATE: 'USER_ROLE_CREATE',
-  USER_ROLE_READ: 'USER_ROLE_READ',
-  USER_ROLE_UPDATE: 'USER_ROLE_UPDATE',
-  USER_ROLE_DELETE: 'USER_ROLE_DELETE',
-  USER_ROLE_MANAGE: 'USER_ROLE_MANAGE'
+/**
+ * Role checking middleware specifically for UserRole management operations
+ */
+
+// Allowed roles for user-role management
+export const USER_ROLE_ROLES = {
+  ALLOWED_ROLES: ['administrateur fonctionnel']
 };
 
-const requireUserRolePermission = (requiredPermission) => {
+/**
+ * Generic role checker for user-role operations
+ * @param {Array<string>} allowedRoles - Array of role names that are allowed
+ * @returns {Function} Express middleware
+ */
+const requireUserRoleRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
         return res.status(403).json({
           error: 'Insufficient permissions',
-          required: requiredPermission
+          required: allowedRoles
         });
       }
 
       next();
     } catch (err) {
-      console.error('UserRole permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('UserRole role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-export const canManageUserRole = requireUserRolePermission(USER_ROLE_PERMISSIONS.USER_ROLE_MANAGE);
-export const canCreateUserRole = requireUserRolePermission(USER_ROLE_PERMISSIONS.USER_ROLE_CREATE);
-export const canReadUserRole = requireUserRolePermission(USER_ROLE_PERMISSIONS.USER_ROLE_READ);
-export const canUpdateUserRole = requireUserRolePermission(USER_ROLE_PERMISSIONS.USER_ROLE_UPDATE);
-export const canDeleteUserRole = requireUserRolePermission(USER_ROLE_PERMISSIONS.USER_ROLE_DELETE);
+// All operations require 'administrateur fonctionnel' role
+export const canManageUserRole = requireUserRoleRole(USER_ROLE_ROLES.ALLOWED_ROLES);
+export const canCreateUserRole = requireUserRoleRole(USER_ROLE_ROLES.ALLOWED_ROLES);
+export const canReadUserRole = requireUserRoleRole(USER_ROLE_ROLES.ALLOWED_ROLES);
+export const canUpdateUserRole = requireUserRoleRole(USER_ROLE_ROLES.ALLOWED_ROLES);
+export const canDeleteUserRole = requireUserRoleRole(USER_ROLE_ROLES.ALLOWED_ROLES);
