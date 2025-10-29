@@ -1,52 +1,98 @@
 // src/middlewares/appparameter/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
 /**
- * Permission checking middleware specifically for AppParameter management operations
+ * Role checking middleware specifically for AppParameter management operations
  */
 
-// Permission constants for app parameter management
-export const APPPARAMETER_PERMISSIONS = {
-  APPPARAMETER_CREATE: 'APPPARAMETER_CREATE',
-  APPPARAMETER_READ: 'APPPARAMETER_READ',
-  APPPARAMETER_UPDATE: 'APPPARAMETER_UPDATE',
-  APPPARAMETER_DELETE: 'APPPARAMETER_DELETE',
-  APPPARAMETER_SET: 'APPPARAMETER_SET' // Special permission for upsert operations
+// Allowed roles for app parameter management
+export const APPPARAMETER_ROLES = {
+  ALLOWED_ROLES: ['administrateur fonctionnel']
 };
 
 /**
- * Generic permission checker for app parameter operations
- * @param {string} requiredPermission - Permission name required
+ * Generic role checker for app parameter operations
+ * @param {Array<string>} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
-const requireAppParameterPermission = (requiredPermission) => {
+const requireAppParameterRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
+      console.log('=== Role Check Debug ===');
+      console.log('User ID:', req.user?.id);
+      console.log('Required Roles:', allowedRoles);
+
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
-        return res.status(403).json({ 
-          error: 'Insufficient permissions', 
-          required: requiredPermission 
+      // Get user's roles
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+      console.log('Raw User Roles Retrieved:', JSON.stringify(userRoles, null, 2));
+
+      if (!userRoles || userRoles.length === 0) {
+        console.log('User has no roles assigned');
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
         });
       }
 
+      // Check if user has any of the required roles
+      // Handle different possible column names from stored procedure
+      const hasRequiredRole = userRoles.some(userRole => {
+        // Get the role name from various possible column names
+        const roleName = userRole.name || 
+                        userRole.roleName || 
+                        userRole.RoleName || 
+                        userRole.Name || 
+                        userRole.role_name ||
+                        '';
+        
+        console.log(`Checking role: "${roleName}"`);
+
+        if (!roleName) {
+          console.log('Warning: Role object has no name property:', userRole);
+          return false;
+        }
+
+        return allowedRoles.some(allowedRole => {
+          const match = roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim();
+          console.log(`  "${roleName.toLowerCase().trim()}" === "${allowedRole.toLowerCase().trim()}" => ${match}`);
+          return match;
+        });
+      });
+
+      console.log('Has Required Role:', hasRequiredRole);
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles,
+          userHasRoles: userRoles.map(r => 
+            r.name || r.roleName || r.RoleName || r.Name || r.role_name || 'unknown'
+          )
+        });
+      }
+
+      console.log('Role check passed!');
       next();
     } catch (err) {
-      console.error('AppParameter permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('AppParameter role check error:', err);
+      return res.status(500).json({ 
+        error: 'Role check failed', 
+        details: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      });
     }
   };
 };
 
-// Specific permission middleware for app parameter management
-export const canCreateAppParameter = requireAppParameterPermission(APPPARAMETER_PERMISSIONS.APPPARAMETER_CREATE);
-export const canReadAppParameter = requireAppParameterPermission(APPPARAMETER_PERMISSIONS.APPPARAMETER_READ);
-export const canUpdateAppParameter = requireAppParameterPermission(APPPARAMETER_PERMISSIONS.APPPARAMETER_UPDATE);
-export const canDeleteAppParameter = requireAppParameterPermission(APPPARAMETER_PERMISSIONS.APPPARAMETER_DELETE);
-export const canSetAppParameter = requireAppParameterPermission(APPPARAMETER_PERMISSIONS.APPPARAMETER_SET);
+// Specific role middleware for app parameter management
+// All operations require 'administrateur fonctionnel' role
+export const canCreateAppParameter = requireAppParameterRole(APPPARAMETER_ROLES.ALLOWED_ROLES);
+export const canReadAppParameter = requireAppParameterRole(APPPARAMETER_ROLES.ALLOWED_ROLES);
+export const canUpdateAppParameter = requireAppParameterRole(APPPARAMETER_ROLES.ALLOWED_ROLES);
+export const canDeleteAppParameter = requireAppParameterRole(APPPARAMETER_ROLES.ALLOWED_ROLES);
+export const canSetAppParameter = requireAppParameterRole(APPPARAMETER_ROLES.ALLOWED_ROLES);

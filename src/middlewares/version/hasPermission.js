@@ -1,50 +1,56 @@
 // src/middlewares/version/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
-/**
- * Permission checking middleware specifically for Version management operations
- */
-
-// Permission constants for version management
-export const VERSION_PERMISSIONS = {
-  VERSION_CREATE: 'VERSION_CREATE',
-  VERSION_READ: 'VERSION_READ',
-  VERSION_UPDATE: 'VERSION_UPDATE',
-  VERSION_DELETE: 'VERSION_DELETE'
+export const VERSION_ROLES = {
+  FULL_ACCESS: ['administrateur fonctionnel'],
+  READ_ONLY: ['intégrateur des objectifs']
 };
 
-/**
- * Generic permission checker for version operations
- * @param {string} requiredPermission - Permission name required
- * @returns {Function} Express middleware
- */
-const requireVersionPermission = (requiredPermission) => {
+const requireVersionRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
-        return res.status(403).json({ 
-          error: 'Insufficient permissions', 
-          required: requiredPermission 
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles
         });
       }
 
       next();
     } catch (err) {
-      console.error('Version permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('Version role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-// Specific permission middleware for version management
-export const canCreateVersion = requireVersionPermission(VERSION_PERMISSIONS.VERSION_CREATE);
-export const canReadVersion = requireVersionPermission(VERSION_PERMISSIONS.VERSION_READ);
-export const canUpdateVersion = requireVersionPermission(VERSION_PERMISSIONS.VERSION_UPDATE);
-export const canDeleteVersion = requireVersionPermission(VERSION_PERMISSIONS.VERSION_DELETE);
+// READ - Both roles can read
+export const canReadVersion = requireVersionRole([
+  ...VERSION_ROLES.FULL_ACCESS,
+  ...VERSION_ROLES.READ_ONLY
+]);
+
+// CREATE/UPDATE/DELETE - Only administrateur fonctionnel
+export const canCreateVersion = requireVersionRole(VERSION_ROLES.FULL_ACCESS);
+export const canUpdateVersion = requireVersionRole(VERSION_ROLES.FULL_ACCESS);
+export const canDeleteVersion = requireVersionRole(VERSION_ROLES.FULL_ACCESS);

@@ -1,50 +1,60 @@
 // src/middlewares/succursale/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
 /**
- * Permission checking middleware specifically for Succursale management operations
+ * Role checking middleware specifically for Succursale management operations
  */
 
-// Permission constants for succursale management
-export const SUCCURSALE_PERMISSIONS = {
-  SUCCURSALE_CREATE: 'SUCCURSALE_CREATE',
-  SUCCURSALE_READ: 'SUCCURSALE_READ',
-  SUCCURSALE_UPDATE: 'SUCCURSALE_UPDATE',
-  SUCCURSALE_DELETE: 'SUCCURSALE_DELETE'
+// Allowed roles for succursale management
+export const SUCCURSALE_ROLES = {
+  ALLOWED_ROLES: ['administrateur fonctionnel']
 };
 
 /**
- * Generic permission checker for succursale operations
- * @param {string} requiredPermission - Permission name required
+ * Generic role checker for succursale operations
+ * @param {Array<string>} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
-const requireSuccursalePermission = (requiredPermission) => {
+const requireSuccursaleRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
-        return res.status(403).json({ 
-          error: 'Insufficient permissions', 
-          required: requiredPermission 
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles
         });
       }
 
       next();
     } catch (err) {
-      console.error('Succursale permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('Succursale role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-// Specific permission middleware for succursale management
-export const canCreateSuccursale = requireSuccursalePermission(SUCCURSALE_PERMISSIONS.SUCCURSALE_CREATE);
-export const canReadSuccursale = requireSuccursalePermission(SUCCURSALE_PERMISSIONS.SUCCURSALE_READ);
-export const canUpdateSuccursale = requireSuccursalePermission(SUCCURSALE_PERMISSIONS.SUCCURSALE_UPDATE);
-export const canDeleteSuccursale = requireSuccursalePermission(SUCCURSALE_PERMISSIONS.SUCCURSALE_DELETE);
+// All operations require 'administrateur fonctionnel' role
+export const canCreateSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.ALLOWED_ROLES);
+export const canReadSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.ALLOWED_ROLES);
+export const canUpdateSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.ALLOWED_ROLES);
+export const canDeleteSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.ALLOWED_ROLES);

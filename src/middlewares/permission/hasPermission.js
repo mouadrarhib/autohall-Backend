@@ -1,76 +1,64 @@
 // src/middlewares/permission/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
 /**
- * Permission checking middleware specifically for Permission management operations
+ * Role checking middleware specifically for Permission management operations
  */
 
-// Permission constants for permission management
+// Allowed roles for permission management
 export const PERMISSION_ROLES = {
-  PERMISSION_CREATE: 'PERMISSION_CREATE',
-  PERMISSION_READ: 'PERMISSION_READ',
-  PERMISSION_UPDATE: 'PERMISSION_UPDATE',
-  PERMISSION_LINK: 'PERMISSION_LINK',
-  PERMISSION_LINK_READ: 'PERMISSION_LINK_READ'
+  ALLOWED_ROLES: ['administrateur fonctionnel']
 };
 
 /**
- * Generic permission checker
- * @param {string} requiredPermission - Permission name required
+ * Generic role checker for permission operations
+ * @param {Array<string>} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
-const requirePermission = (requiredPermission) => {
+const requirePermissionRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
         return res.status(403).json({
           error: 'Insufficient permissions',
-          required: requiredPermission
+          required: allowedRoles
         });
       }
 
       next();
     } catch (err) {
-      console.error('Permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('Permission role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-// Specific permission middleware for permission management
-export const canCreatePermission = requirePermission(PERMISSION_ROLES.PERMISSION_CREATE);
-export const canReadPermission = requirePermission(PERMISSION_ROLES.PERMISSION_READ);
-export const canUpdatePermission = requirePermission(PERMISSION_ROLES.PERMISSION_UPDATE);
-export const canLinkPermission = requirePermission(PERMISSION_ROLES.PERMISSION_LINK);
-export const canReadPermissionLinks = requirePermission(PERMISSION_ROLES.PERMISSION_LINK_READ);
+// All operations require 'administrateur fonctionnel' role
+export const canCreatePermission = requirePermissionRole(PERMISSION_ROLES.ALLOWED_ROLES);
+export const canReadPermission = requirePermissionRole(PERMISSION_ROLES.ALLOWED_ROLES);
+export const canUpdatePermission = requirePermissionRole(PERMISSION_ROLES.ALLOWED_ROLES);
+export const canLinkPermission = requirePermissionRole(PERMISSION_ROLES.ALLOWED_ROLES);
+export const canReadPermissionLinks = requirePermissionRole(PERMISSION_ROLES.ALLOWED_ROLES);
 
-// Multi-permission checker (user needs ANY of the permissions)
-export const canReadOrLink = async (req, res, next) => {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const readResult = await permissionService.userHasPermissionByName(req.user.id, PERMISSION_ROLES.PERMISSION_READ);
-    const linkReadResult = await permissionService.userHasPermissionByName(req.user.id, PERMISSION_ROLES.PERMISSION_LINK_READ);
-    
-    if (!readResult?.hasPermission && !linkReadResult?.hasPermission) {
-      return res.status(403).json({
-        error: 'Insufficient permissions',
-        required: `${PERMISSION_ROLES.PERMISSION_READ} or ${PERMISSION_ROLES.PERMISSION_LINK_READ}`
-      });
-    }
-
-    next();
-  } catch (err) {
-    console.error('Permission check error:', err);
-    return res.status(500).json({ error: 'Permission check failed' });
-  }
-};
+// Multi-role checker (user needs the required role)
+export const canReadOrLink = requirePermissionRole(PERMISSION_ROLES.ALLOWED_ROLES);

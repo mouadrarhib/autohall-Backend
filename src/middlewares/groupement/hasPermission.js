@@ -1,50 +1,56 @@
 // src/middlewares/groupement/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
-/**
- * Permission checking middleware specifically for Groupement management operations
- */
-
-// Permission constants for groupement management
-export const GROUPEMENT_PERMISSIONS = {
-  GROUPEMENT_CREATE: 'GROUPEMENT_CREATE',
-  GROUPEMENT_READ: 'GROUPEMENT_READ',
-  GROUPEMENT_UPDATE: 'GROUPEMENT_UPDATE',
-  GROUPEMENT_DELETE: 'GROUPEMENT_DELETE'
+export const GROUPEMENT_ROLES = {
+  FULL_ACCESS: ['administrateur fonctionnel'],
+  READ_ONLY: ['intégrateur des objectifs']
 };
 
-/**
- * Generic permission checker for groupement operations
- * @param {string} requiredPermission - Permission name required
- * @returns {Function} Express middleware
- */
-const requireGroupementPermission = (requiredPermission) => {
+const requireGroupementRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
-        return res.status(403).json({ 
-          error: 'Insufficient permissions', 
-          required: requiredPermission 
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles
         });
       }
 
       next();
     } catch (err) {
-      console.error('Groupement permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('Groupement role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-// Specific permission middleware for groupement management
-export const canCreateGroupement = requireGroupementPermission(GROUPEMENT_PERMISSIONS.GROUPEMENT_CREATE);
-export const canReadGroupement = requireGroupementPermission(GROUPEMENT_PERMISSIONS.GROUPEMENT_READ);
-export const canUpdateGroupement = requireGroupementPermission(GROUPEMENT_PERMISSIONS.GROUPEMENT_UPDATE);
-export const canDeleteGroupement = requireGroupementPermission(GROUPEMENT_PERMISSIONS.GROUPEMENT_DELETE);
+// READ - Both roles can read
+export const canReadGroupement = requireGroupementRole([
+  ...GROUPEMENT_ROLES.FULL_ACCESS,
+  ...GROUPEMENT_ROLES.READ_ONLY
+]);
+
+// CREATE/UPDATE/DELETE - Only administrateur fonctionnel
+export const canCreateGroupement = requireGroupementRole(GROUPEMENT_ROLES.FULL_ACCESS);
+export const canUpdateGroupement = requireGroupementRole(GROUPEMENT_ROLES.FULL_ACCESS);
+export const canDeleteGroupement = requireGroupementRole(GROUPEMENT_ROLES.FULL_ACCESS);

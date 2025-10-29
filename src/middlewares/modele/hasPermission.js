@@ -1,50 +1,56 @@
 // src/middlewares/modele/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
-/**
- * Permission checking middleware specifically for Modele management operations
- */
-
-// Permission constants for modele management
-export const MODELE_PERMISSIONS = {
-  MODELE_CREATE: 'MODELE_CREATE',
-  MODELE_READ: 'MODELE_READ',
-  MODELE_UPDATE: 'MODELE_UPDATE',
-  MODELE_DELETE: 'MODELE_DELETE'
+export const MODELE_ROLES = {
+  FULL_ACCESS: ['administrateur fonctionnel'],
+  READ_ONLY: ['intégrateur des objectifs']
 };
 
-/**
- * Generic permission checker for modele operations
- * @param {string} requiredPermission - Permission name required
- * @returns {Function} Express middleware
- */
-const requireModelePermission = (requiredPermission) => {
+const requireModeleRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
-        return res.status(403).json({ 
-          error: 'Insufficient permissions', 
-          required: requiredPermission 
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles
         });
       }
 
       next();
     } catch (err) {
-      console.error('Modele permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('Modele role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-// Specific permission middleware for modele management
-export const canCreateModele = requireModelePermission(MODELE_PERMISSIONS.MODELE_CREATE);
-export const canReadModele = requireModelePermission(MODELE_PERMISSIONS.MODELE_READ);
-export const canUpdateModele = requireModelePermission(MODELE_PERMISSIONS.MODELE_UPDATE);
-export const canDeleteModele = requireModelePermission(MODELE_PERMISSIONS.MODELE_DELETE);
+// READ - Both roles can read
+export const canReadModele = requireModeleRole([
+  ...MODELE_ROLES.FULL_ACCESS,
+  ...MODELE_ROLES.READ_ONLY
+]);
+
+// CREATE/UPDATE/DELETE - Only administrateur fonctionnel
+export const canCreateModele = requireModeleRole(MODELE_ROLES.FULL_ACCESS);
+export const canUpdateModele = requireModeleRole(MODELE_ROLES.FULL_ACCESS);
+export const canDeleteModele = requireModeleRole(MODELE_ROLES.FULL_ACCESS);

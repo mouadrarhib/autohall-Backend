@@ -1,50 +1,60 @@
 // src/middlewares/usersite/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
 /**
- * Permission checking middleware specifically for UserSite management operations
+ * Role checking middleware specifically for UserSite management operations
  */
 
-// Permission constants for usersite management
-export const USERSITE_PERMISSIONS = {
-  USERSITE_CREATE: 'USERSITE_CREATE',
-  USERSITE_READ: 'USERSITE_READ',
-  USERSITE_UPDATE: 'USERSITE_UPDATE',
-  USERSITE_DELETE: 'USERSITE_DELETE'
+// Allowed roles for usersite management
+export const USERSITE_ROLES = {
+  ALLOWED_ROLES: ['administrateur fonctionnel']
 };
 
 /**
- * Generic permission checker for usersite operations
- * @param {string} requiredPermission - Permission name required
+ * Generic role checker for usersite operations
+ * @param {Array<string>} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
-const requireUserSitePermission = (requiredPermission) => {
+const requireUserSiteRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
-        return res.status(403).json({ 
-          error: 'Insufficient permissions', 
-          required: requiredPermission 
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles
         });
       }
 
       next();
     } catch (err) {
-      console.error('UserSite permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('UserSite role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-// Specific permission middleware for usersite management
-export const canCreateUserSite = requireUserSitePermission(USERSITE_PERMISSIONS.USERSITE_CREATE);
-export const canReadUserSite = requireUserSitePermission(USERSITE_PERMISSIONS.USERSITE_READ);
-export const canUpdateUserSite = requireUserSitePermission(USERSITE_PERMISSIONS.USERSITE_UPDATE);
-export const canDeleteUserSite = requireUserSitePermission(USERSITE_PERMISSIONS.USERSITE_DELETE);
+// All operations require 'administrateur fonctionnel' role
+export const canCreateUserSite = requireUserSiteRole(USERSITE_ROLES.ALLOWED_ROLES);
+export const canReadUserSite = requireUserSiteRole(USERSITE_ROLES.ALLOWED_ROLES);
+export const canUpdateUserSite = requireUserSiteRole(USERSITE_ROLES.ALLOWED_ROLES);
+export const canDeleteUserSite = requireUserSiteRole(USERSITE_ROLES.ALLOWED_ROLES);

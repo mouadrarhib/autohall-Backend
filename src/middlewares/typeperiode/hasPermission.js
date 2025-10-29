@@ -1,31 +1,59 @@
 // src/middlewares/typeperiode/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
-export const TYPE_PERIODE_PERMISSIONS = {
-  TYPE_PERIODE_CREATE: 'TYPE_PERIODE_CREATE',
-  TYPE_PERIODE_READ: 'TYPE_PERIODE_READ',
-  TYPE_PERIODE_UPDATE: 'TYPE_PERIODE_UPDATE'
+/**
+ * Role checking middleware specifically for TypePeriode management operations
+ */
+
+// Allowed roles for type periode management
+export const TYPE_PERIODE_ROLES = {
+  ALLOWED_ROLES: ['administrateur fonctionnel']
 };
 
-const requireTypePeriodePermission = (requiredPermission) => {
+/**
+ * Generic role checker for type periode operations
+ * @param {Array<string>} allowedRoles - Array of role names that are allowed
+ * @returns {Function} Express middleware
+ */
+const requireTypePeriodeRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      if (!result?.hasPermission) {
-        return res.status(403).json({ error: 'Insufficient permissions', required: requiredPermission });
+
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
       }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles
+        });
+      }
+
       next();
     } catch (err) {
-      console.error('TypePeriode permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('TypePeriode role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-export const canCreateTypePeriode = requireTypePeriodePermission(TYPE_PERIODE_PERMISSIONS.TYPE_PERIODE_CREATE);
-export const canReadTypePeriode = requireTypePeriodePermission(TYPE_PERIODE_PERMISSIONS.TYPE_PERIODE_READ);
-export const canUpdateTypePeriode = requireTypePeriodePermission(TYPE_PERIODE_PERMISSIONS.TYPE_PERIODE_UPDATE);
+// All operations require 'administrateur fonctionnel' role
+export const canCreateTypePeriode = requireTypePeriodeRole(TYPE_PERIODE_ROLES.ALLOWED_ROLES);
+export const canReadTypePeriode = requireTypePeriodeRole(TYPE_PERIODE_ROLES.ALLOWED_ROLES);
+export const canUpdateTypePeriode = requireTypePeriodeRole(TYPE_PERIODE_ROLES.ALLOWED_ROLES);

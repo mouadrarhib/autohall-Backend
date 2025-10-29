@@ -268,3 +268,30 @@ export async function getAllUserRoles(page = 1, pageSize = 50, activeOnly = fals
     throw error;
   }
 }
+
+/**
+ * Check if user has any of the specified roles by role names
+ * @param {number} userId - User ID
+ * @param {Array<string>} roleNames - Array of role names to check
+ * @param {boolean} activeOnly - Check active roles only
+ * @returns {Promise<boolean>}
+ */
+export async function userHasAnyRoleByName(userId, roleNames, activeOnly = true) {
+  try {
+    const roles = await getRolesByUser(userId, activeOnly);
+    
+    if (!roles || roles.length === 0) {
+      return false;
+    }
+
+    return roles.some(role => 
+      roleNames.some(roleName => 
+        role.name.toLowerCase() === roleName.toLowerCase()
+      )
+    );
+  } catch (error) {
+    console.error('Error checking user roles by name:', error);
+    return false;
+  }
+}
+

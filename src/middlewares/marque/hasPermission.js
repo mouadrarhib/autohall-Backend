@@ -1,50 +1,56 @@
-// src/middleware/marque/hasPermission.js
+// src/middlewares/marque/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
-/**
- * Permission checking middleware specifically for Marque management operations
- */
-
-// Permission constants for marque management
-export const MARQUE_PERMISSIONS = {
-  MARQUE_CREATE: 'MARQUE_CREATE',
-  MARQUE_READ: 'MARQUE_READ',
-  MARQUE_UPDATE: 'MARQUE_UPDATE',
-  MARQUE_DELETE: 'MARQUE_DELETE'
+export const MARQUE_ROLES = {
+  FULL_ACCESS: ['administrateur fonctionnel'],
+  READ_ONLY: ['intégrateur des objectifs']
 };
 
-/**
- * Generic permission checker for marque operations
- * @param {string} requiredPermission - Permission name required
- * @returns {Function} Express middleware
- */
-const requireMarquePermission = (requiredPermission) => {
+const requireMarqueRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      
-      if (!result?.hasPermission) {
-        return res.status(403).json({ 
-          error: 'Insufficient permissions', 
-          required: requiredPermission 
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
+      }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles
         });
       }
 
       next();
     } catch (err) {
-      console.error('Marque permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('Marque role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-// Specific permission middleware for marque management
-export const canCreateMarque = requireMarquePermission(MARQUE_PERMISSIONS.MARQUE_CREATE);
-export const canReadMarque = requireMarquePermission(MARQUE_PERMISSIONS.MARQUE_READ);
-export const canUpdateMarque = requireMarquePermission(MARQUE_PERMISSIONS.MARQUE_UPDATE);
-export const canDeleteMarque = requireMarquePermission(MARQUE_PERMISSIONS.MARQUE_DELETE);
+// READ - Both roles can read
+export const canReadMarque = requireMarqueRole([
+  ...MARQUE_ROLES.FULL_ACCESS,
+  ...MARQUE_ROLES.READ_ONLY
+]);
+
+// CREATE/UPDATE/DELETE - Only administrateur fonctionnel
+export const canCreateMarque = requireMarqueRole(MARQUE_ROLES.FULL_ACCESS);
+export const canUpdateMarque = requireMarqueRole(MARQUE_ROLES.FULL_ACCESS);
+export const canDeleteMarque = requireMarqueRole(MARQUE_ROLES.FULL_ACCESS);

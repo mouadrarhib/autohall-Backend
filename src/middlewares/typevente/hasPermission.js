@@ -1,31 +1,55 @@
 // src/middlewares/typevente/hasPermission.js
 
-import * as permissionService from '../../services/permission.service.js';
+import * as userRoleService from '../../services/userRole.service.js';
 
-export const TYPE_VENTE_PERMISSIONS = {
-  TYPE_VENTE_CREATE: 'TYPE_VENTE_CREATE',
-  TYPE_VENTE_READ: 'TYPE_VENTE_READ',
-  TYPE_VENTE_UPDATE: 'TYPE_VENTE_UPDATE'
+export const TYPE_VENTE_ROLES = {
+  FULL_ACCESS: ['administrateur fonctionnel'],
+  READ_ONLY: ['intégrateur des objectifs']
 };
 
-const requireTypeVentePermission = (requiredPermission) => {
+const requireTypeVenteRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ error: 'Authentication required' });
       }
-      const result = await permissionService.userHasPermissionByName(req.user.id, requiredPermission);
-      if (!result?.hasPermission) {
-        return res.status(403).json({ error: 'Insufficient permissions', required: requiredPermission });
+
+      const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
+
+      if (!userRoles || userRoles.length === 0) {
+        return res.status(403).json({
+          error: 'Insufficient permissions - No roles assigned',
+          required: allowedRoles
+        });
       }
+
+      const hasRequiredRole = userRoles.some(userRole => {
+        const roleName = userRole.name || userRole.roleName || userRole.RoleName || userRole.Name || userRole.role_name || '';
+        if (!roleName) return false;
+        return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
+      });
+
+      if (!hasRequiredRole) {
+        return res.status(403).json({
+          error: 'Insufficient permissions',
+          required: allowedRoles
+        });
+      }
+
       next();
     } catch (err) {
-      console.error('TypeVente permission check error:', err);
-      return res.status(500).json({ error: 'Permission check failed' });
+      console.error('TypeVente role check error:', err);
+      return res.status(500).json({ error: 'Role check failed', details: err.message });
     }
   };
 };
 
-export const canCreateTypeVente = requireTypeVentePermission(TYPE_VENTE_PERMISSIONS.TYPE_VENTE_CREATE);
-export const canReadTypeVente = requireTypeVentePermission(TYPE_VENTE_PERMISSIONS.TYPE_VENTE_READ);
-export const canUpdateTypeVente = requireTypeVentePermission(TYPE_VENTE_PERMISSIONS.TYPE_VENTE_UPDATE);
+// READ - Both roles can read
+export const canReadTypeVente = requireTypeVenteRole([
+  ...TYPE_VENTE_ROLES.FULL_ACCESS,
+  ...TYPE_VENTE_ROLES.READ_ONLY
+]);
+
+// CREATE/UPDATE - Only administrateur fonctionnel
+export const canCreateTypeVente = requireTypeVenteRole(TYPE_VENTE_ROLES.FULL_ACCESS);
+export const canUpdateTypeVente = requireTypeVenteRole(TYPE_VENTE_ROLES.FULL_ACCESS);
