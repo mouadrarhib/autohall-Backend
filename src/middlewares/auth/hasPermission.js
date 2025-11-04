@@ -3,17 +3,20 @@
 import * as userRoleService from '../../services/userRole.service.js';
 
 /**
- * Role checking middleware specifically for Auth operations
+ * Role checking middleware specifically for Auth/User operations
  */
 
-// Allowed roles for auth management
+// ✅ CHANGED: Different roles for different operations
 export const AUTH_ROLES = {
-  ALLOWED_ROLES: ['administrateur fonctionnel']
+  // Both admin and intégrateur can READ users
+  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs'],
+  // Only admin can CREATE/UPDATE/DELETE users
+  WRITE_ROLES: ['administrateur fonctionnel']
 };
 
 /**
  * Generic role checker for auth operations
- * @param {Array<string>} allowedRoles - Array of role names that are allowed
+ * @param {Array} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
 const requireAuthRole = (allowedRoles) => {
@@ -25,7 +28,6 @@ const requireAuthRole = (allowedRoles) => {
 
       // Get user's roles
       const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
-
       if (!userRoles || userRoles.length === 0) {
         return res.status(403).json({
           error: 'Insufficient permissions - No roles assigned',
@@ -35,16 +37,14 @@ const requireAuthRole = (allowedRoles) => {
 
       // Check if user has any of the required roles
       const hasRequiredRole = userRoles.some(userRole => {
-        const roleName = userRole.name || 
-                        userRole.roleName || 
-                        userRole.RoleName || 
-                        userRole.Name || 
-                        userRole.role_name ||
-                        '';
-
+        const roleName = userRole.name ||
+          userRole.roleName ||
+          userRole.RoleName ||
+          userRole.Name ||
+          userRole.role_name ||
+          '';
         if (!roleName) return false;
-
-        return allowedRoles.some(allowedRole => 
+        return allowedRoles.some(allowedRole =>
           roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim()
         );
       });
@@ -53,7 +53,7 @@ const requireAuthRole = (allowedRoles) => {
         return res.status(403).json({
           error: 'Insufficient permissions',
           required: allowedRoles,
-          userHasRoles: userRoles.map(r => 
+          userHasRoles: userRoles.map(r =>
             r.name || r.roleName || r.RoleName || r.Name || r.role_name || 'unknown'
           )
         });
@@ -62,7 +62,7 @@ const requireAuthRole = (allowedRoles) => {
       next();
     } catch (err) {
       console.error('Auth role check error:', err);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Role check failed',
         details: err.message
       });
@@ -70,8 +70,10 @@ const requireAuthRole = (allowedRoles) => {
   };
 };
 
-// Specific role middleware for auth management
-// All operations require 'administrateur fonctionnel' role
-export const canReadAuth = requireAuthRole(AUTH_ROLES.ALLOWED_ROLES);
-export const canManageAuth = requireAuthRole(AUTH_ROLES.ALLOWED_ROLES);
-export const canAdminAuth = requireAuthRole(AUTH_ROLES.ALLOWED_ROLES);
+// ✅ CHANGED: Specific role middleware for auth/user management
+// READ: Both 'administrateur fonctionnel' and 'intégrateur des objectifs' can read users
+export const canReadAuth = requireAuthRole(AUTH_ROLES.READ_ROLES);
+
+// WRITE: Only 'administrateur fonctionnel' can manage users
+export const canManageAuth = requireAuthRole(AUTH_ROLES.WRITE_ROLES);
+export const canAdminAuth = requireAuthRole(AUTH_ROLES.WRITE_ROLES);

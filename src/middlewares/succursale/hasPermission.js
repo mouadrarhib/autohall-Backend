@@ -6,14 +6,17 @@ import * as userRoleService from '../../services/userRole.service.js';
  * Role checking middleware specifically for Succursale management operations
  */
 
-// Allowed roles for succursale management
+// ✅ CHANGED: Different roles for different operations
 export const SUCCURSALE_ROLES = {
-  ALLOWED_ROLES: ['administrateur fonctionnel']
+  // Both admin and intégrateur can READ succursales
+  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs'],
+  // Only admin can CREATE/UPDATE/DELETE succursales
+  WRITE_ROLES: ['administrateur fonctionnel']
 };
 
 /**
  * Generic role checker for succursale operations
- * @param {Array<string>} allowedRoles - Array of role names that are allowed
+ * @param {Array} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
 const requireSuccursaleRole = (allowedRoles) => {
@@ -24,7 +27,6 @@ const requireSuccursaleRole = (allowedRoles) => {
       }
 
       const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
-
       if (!userRoles || userRoles.length === 0) {
         return res.status(403).json({
           error: 'Insufficient permissions - No roles assigned',
@@ -37,7 +39,7 @@ const requireSuccursaleRole = (allowedRoles) => {
         if (!roleName) return false;
         return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
       });
-
+      
       if (!hasRequiredRole) {
         return res.status(403).json({
           error: 'Insufficient permissions',
@@ -53,8 +55,11 @@ const requireSuccursaleRole = (allowedRoles) => {
   };
 };
 
-// All operations require 'administrateur fonctionnel' role
-export const canCreateSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.ALLOWED_ROLES);
-export const canReadSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.ALLOWED_ROLES);
-export const canUpdateSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.ALLOWED_ROLES);
-export const canDeleteSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.ALLOWED_ROLES);
+// ✅ CHANGED: Specific role middleware
+// READ: Both 'administrateur fonctionnel' and 'intégrateur des objectifs' can read
+export const canReadSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.READ_ROLES);
+
+// WRITE: Only 'administrateur fonctionnel' can create/update/delete
+export const canCreateSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.WRITE_ROLES);
+export const canUpdateSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.WRITE_ROLES);
+export const canDeleteSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.WRITE_ROLES);

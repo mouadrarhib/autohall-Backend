@@ -6,14 +6,17 @@ import * as userRoleService from '../../services/userRole.service.js';
  * Role checking middleware specifically for Periode management operations
  */
 
-// Allowed roles for periode management
+// ✅ CHANGED: Different roles for different operations
 export const PERIODE_ROLES = {
-  ALLOWED_ROLES: ['administrateur fonctionnel']
+  // Both admin and intégrateur can READ periodes
+  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs'],
+  // Only admin can CREATE/UPDATE/DELETE periodes
+  WRITE_ROLES: ['administrateur fonctionnel']
 };
 
 /**
  * Generic role checker for periode operations
- * @param {Array<string>} allowedRoles - Array of role names that are allowed
+ * @param {Array} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
 const requirePeriodeRole = (allowedRoles) => {
@@ -24,7 +27,6 @@ const requirePeriodeRole = (allowedRoles) => {
       }
 
       const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
-
       if (!userRoles || userRoles.length === 0) {
         return res.status(403).json({
           error: 'Insufficient permissions - No roles assigned',
@@ -41,7 +43,10 @@ const requirePeriodeRole = (allowedRoles) => {
       if (!hasRequiredRole) {
         return res.status(403).json({
           error: 'Insufficient permissions',
-          required: allowedRoles
+          required: allowedRoles,
+          userHasRoles: userRoles.map(r =>
+            r.name || r.roleName || r.RoleName || r.Name || r.role_name || 'unknown'
+          )
         });
       }
 
@@ -53,7 +58,11 @@ const requirePeriodeRole = (allowedRoles) => {
   };
 };
 
-// All operations require 'administrateur fonctionnel' role
-export const canCreatePeriode = requirePeriodeRole(PERIODE_ROLES.ALLOWED_ROLES);
-export const canReadPeriode = requirePeriodeRole(PERIODE_ROLES.ALLOWED_ROLES);
-export const canUpdatePeriode = requirePeriodeRole(PERIODE_ROLES.ALLOWED_ROLES);
+// ✅ CHANGED: Specific role middleware for periode management
+// READ: Both 'administrateur fonctionnel' and 'intégrateur des objectifs' can read
+export const canReadPeriode = requirePeriodeRole(PERIODE_ROLES.READ_ROLES);
+
+// WRITE: Only 'administrateur fonctionnel' can create/update/delete
+export const canCreatePeriode = requirePeriodeRole(PERIODE_ROLES.WRITE_ROLES);
+export const canUpdatePeriode = requirePeriodeRole(PERIODE_ROLES.WRITE_ROLES);
+export const canDeletePeriode = requirePeriodeRole(PERIODE_ROLES.WRITE_ROLES);

@@ -137,6 +137,52 @@ export const listMarques = async (req, res, next) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/marques/current-user:
+ *   get:
+ *     summary: List marques accessible to the connected user
+ *     tags: [Marques]
+ *     parameters:
+ *       - in: query
+ *         name: onlyActive
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Paginated list of marques
+ *       403:
+ *         description: User has no associated filiale
+ */
+export const listMarquesForCurrentUser = async (req, res, next) => {
+  try {
+    const onlyActive = parseBoolean(req.query.onlyActive) !== 0;
+    const page = Number(req.query.page || 1);
+    const pageSize = Number(req.query.pageSize || 10);
+
+    const result = await marqueService.listMarquesForCurrentUser(
+      req.user,
+      onlyActive,
+      page,
+      pageSize
+    );
+
+    sendSuccess(res, result, 'Marques list retrieved successfully');
+  } catch (err) {
+    next(new AppError(err.message, err.statusCode || 500));
+  }
+};
 
 /**
  * @openapi

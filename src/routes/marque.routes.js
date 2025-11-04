@@ -52,6 +52,13 @@ router.get('/by-filiale/:idFiliale',
   marqueController.listMarquesByFiliale
 );
 
+// List marques for the connected user (role-aware)
+router.get('/current-user',
+  canReadMarque,
+  validateMarqueQuery,
+  marqueController.listMarquesForCurrentUser
+);
+
 // Get marque by ID
 router.get('/:id',
   validateMarqueId,
