@@ -12,7 +12,6 @@ import {
   getUserCompleteInfo,
   getAvailableSites,
   logout,
-  // NEW: Add these imports
   updateUser,
   updateUserPassword,
   activateUser,
@@ -26,12 +25,12 @@ import {
   validateUserLogin,
   validateUserCompleteCreation,
   validateUserId,
-  // NEW: Add these imports
   validateUserUpdate,
   validatePasswordUpdate,
   validateUserSiteUpdate
 } from '../middlewares/auth/validateInput.js';
 import {
+  canReadAuth,    // ✅ ADDED
   canManageAuth
 } from '../middlewares/auth/hasPermission.js';
 
@@ -45,21 +44,18 @@ r.get('/me', isAuth, me);
 r.get('/me/roles', isAuth, myRoles);
 r.get('/me/permissions', isAuth, myPermissions);
 
-// Everything below requires authentication + auth-domain permission
-r.use(isAuth, canManageAuth);
+// ✅ CHANGED: READ endpoints - both admin and intégrateur can access
+r.get('/users', isAuth, canReadAuth, getAllUsers);
+r.get('/users/:id/complete', isAuth, canReadAuth, validateUserId, getUserCompleteInfo);
+r.get('/sites', isAuth, canReadAuth, getAvailableSites);
 
-// Admin endpoints
-r.post('/create-user-complete', validateUserCompleteCreation, createUserComplete);
-r.get('/users', getAllUsers);
-r.get('/users/:id/complete', validateUserId, getUserCompleteInfo);
-r.get('/sites', getAvailableSites);
-
-// NEW: User update endpoints
-r.patch('/users/:id', validateUserId, validateUserUpdate, updateUser);
-r.patch('/users/:id/password', validateUserId, validatePasswordUpdate, updateUserPassword);
-r.post('/users/:id/activate', validateUserId, activateUser);
-r.post('/users/:id/deactivate', validateUserId, deactivateUser);
-r.patch('/users/:id/site', validateUserId, validateUserSiteUpdate, updateUserSiteAssignment);
+// ✅ CHANGED: WRITE endpoints - only admin can access
+r.post('/create-user-complete', isAuth, canManageAuth, validateUserCompleteCreation, createUserComplete);
+r.patch('/users/:id', isAuth, canManageAuth, validateUserId, validateUserUpdate, updateUser);
+r.patch('/users/:id/password', isAuth, canManageAuth, validateUserId, validatePasswordUpdate, updateUserPassword);
+r.post('/users/:id/activate', isAuth, canManageAuth, validateUserId, activateUser);
+r.post('/users/:id/deactivate', isAuth, canManageAuth, validateUserId, deactivateUser);
+r.patch('/users/:id/site', isAuth, canManageAuth, validateUserId, validateUserSiteUpdate, updateUserSiteAssignment);
 
 // Error handler for this router
 r.use(errorHandler);

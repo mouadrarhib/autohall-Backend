@@ -6,14 +6,17 @@ import * as userRoleService from '../../services/userRole.service.js';
  * Role checking middleware specifically for UserSite management operations
  */
 
-// Allowed roles for usersite management
+// ✅ CHANGED: Different roles for different operations
 export const USERSITE_ROLES = {
-  ALLOWED_ROLES: ['administrateur fonctionnel']
+  // Both admin and intégrateur can READ usersites
+  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs'],
+  // Only admin can CREATE/UPDATE/DELETE usersites
+  WRITE_ROLES: ['administrateur fonctionnel']
 };
 
 /**
  * Generic role checker for usersite operations
- * @param {Array<string>} allowedRoles - Array of role names that are allowed
+ * @param {Array} allowedRoles - Array of role names that are allowed
  * @returns {Function} Express middleware
  */
 const requireUserSiteRole = (allowedRoles) => {
@@ -24,7 +27,6 @@ const requireUserSiteRole = (allowedRoles) => {
       }
 
       const userRoles = await userRoleService.getRolesByUser(req.user.id, true);
-
       if (!userRoles || userRoles.length === 0) {
         return res.status(403).json({
           error: 'Insufficient permissions - No roles assigned',
@@ -37,7 +39,7 @@ const requireUserSiteRole = (allowedRoles) => {
         if (!roleName) return false;
         return allowedRoles.some(allowedRole => roleName.toLowerCase().trim() === allowedRole.toLowerCase().trim());
       });
-
+      
       if (!hasRequiredRole) {
         return res.status(403).json({
           error: 'Insufficient permissions',
@@ -53,8 +55,11 @@ const requireUserSiteRole = (allowedRoles) => {
   };
 };
 
-// All operations require 'administrateur fonctionnel' role
-export const canCreateUserSite = requireUserSiteRole(USERSITE_ROLES.ALLOWED_ROLES);
-export const canReadUserSite = requireUserSiteRole(USERSITE_ROLES.ALLOWED_ROLES);
-export const canUpdateUserSite = requireUserSiteRole(USERSITE_ROLES.ALLOWED_ROLES);
-export const canDeleteUserSite = requireUserSiteRole(USERSITE_ROLES.ALLOWED_ROLES);
+// ✅ CHANGED: Specific role middleware
+// READ: Both 'administrateur fonctionnel' and 'intégrateur des objectifs' can read
+export const canReadUserSite = requireUserSiteRole(USERSITE_ROLES.READ_ROLES);
+
+// WRITE: Only 'administrateur fonctionnel' can create/update/delete
+export const canCreateUserSite = requireUserSiteRole(USERSITE_ROLES.WRITE_ROLES);
+export const canUpdateUserSite = requireUserSiteRole(USERSITE_ROLES.WRITE_ROLES);
+export const canDeleteUserSite = requireUserSiteRole(USERSITE_ROLES.WRITE_ROLES);
