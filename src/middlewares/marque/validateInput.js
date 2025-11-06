@@ -5,43 +5,6 @@
  */
 
 // Helper function to create validation middleware
-const createValidator = (validationRules) => {
-  return (req, res, next) => {
-    const errors = {};
-
-    for (const [field, rules] of Object.entries(validationRules)) {
-      let value = req.body?.[field] ?? req.params?.[field] ?? req.query?.[field];
-
-      // Trim string values
-      if (typeof value === 'string') value = value.trim();
-
-      for (const rule of rules) {
-        const error = rule(value, field);
-        if (error) {
-          errors[field] = error;
-          break;
-        }
-      }
-    }
-
-    if (Object.keys(errors).length > 0) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        details: errors
-      });
-    }
-
-    // Normalize data - trim name and imageUrl if exists in body
-    if (req.body?.name && typeof req.body.name === 'string') {
-      req.body.name = req.body.name.trim();
-    }
-    if (req.body?.imageUrl && typeof req.body.imageUrl === 'string') {
-      req.body.imageUrl = req.body.imageUrl.trim();
-    }
-
-    next();
-  };
-};
 
 // Validation rules
 const rules = {
@@ -67,18 +30,49 @@ const rules = {
   optional: (value, field) => null // Always pass for optional fields
 };
 
+
+const createValidator = (validationRules) => {
+    return (req, res, next) => {
+        const errors = {};
+        for (const [field, rules] of Object.entries(validationRules)) {
+            let value = req.body?.[field] ?? req.params?.[field] ?? req.query?.[field];
+            if (typeof value === 'string') value = value.trim();
+            for (const rule of rules) {
+                const error = rule(value, field);
+                if (error) {
+                    errors[field] = error;
+                    break;
+                }
+            }
+        }
+        if (Object.keys(errors).length > 0) {
+            return res.status(400).json({
+                error: 'Validation failed',
+                details: errors
+            });
+        }
+        
+        // Normalize data - trim name if exists in body
+        if (req.body?.name && typeof req.body.name === 'string') {
+            req.body.name = req.body.name.trim();
+        }
+        
+        // ✅ REMOVED: imageUrl trimming (no longer needed)
+        
+        next();
+    };
+};
+
 // Marque-specific validators
 export const validateMarqueCreate = createValidator({
   name: [rules.required, rules.string, rules.minLength(1), rules.maxLength(255)],
   idFiliale: [rules.required, rules.integer],
-  imageUrl: [rules.string, rules.maxLength(500)],
   active: [rules.boolean]
 });
 
 export const validateMarqueUpdate = createValidator({
   name: [rules.string, rules.minLength(1), rules.maxLength(255)],
   idFiliale: [rules.integer],
-  imageUrl: [rules.string, rules.maxLength(500)],
   active: [rules.boolean]
 });
 
