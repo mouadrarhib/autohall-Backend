@@ -3,22 +3,23 @@
 import express from 'express';
 import { isAuth } from '../middlewares/isAuth.js';
 import { errorHandler } from '../middlewares/responseHandler.js';
+import { upload } from '../storage/cloudinaryConfig.js'; // ✅ ADDED
 
 // Import validation middleware
 import {
-  validateMarqueCreate,
-  validateMarqueUpdate,
-  validateMarqueSearch,
-  validateMarqueId,
-  validateFilialeId,
-  validateMarqueQuery
+    validateMarqueCreate,
+    validateMarqueUpdate,
+    validateMarqueSearch,
+    validateMarqueId,
+    validateFilialeId,
+    validateMarqueQuery
 } from '../middlewares/marque/validateInput.js';
 
 // Import permission middleware
 import {
-  canCreateMarque,
-  canReadMarque,
-  canUpdateMarque
+    canCreateMarque,
+    canReadMarque,
+    canUpdateMarque
 } from '../middlewares/marque/hasPermission.js';
 
 // Import controller
@@ -29,70 +30,72 @@ const router = express.Router();
 // All routes require authentication
 router.use(isAuth);
 
-// Create marque
+// ✅ MODIFIED: Create marque with image upload
 router.post('/',
-  canCreateMarque,
-  validateMarqueCreate,
-  marqueController.createMarque
+    canCreateMarque,
+    upload.single('image'),
+    validateMarqueCreate,
+    marqueController.createMarque
 );
 
 // Search marques (must be before /:id to avoid route conflicts)
 router.get('/search',
-  canReadMarque,
-  validateMarqueSearch,
-  validateMarqueQuery,
-  marqueController.searchMarques
+    canReadMarque,
+    validateMarqueSearch,
+    validateMarqueQuery,
+    marqueController.searchMarques
 );
 
 // List marques by filiale (must be before /:id to avoid route conflicts)
 router.get('/by-filiale/:idFiliale',
-  validateFilialeId,
-  canReadMarque,
-  validateMarqueQuery,
-  marqueController.listMarquesByFiliale
+    validateFilialeId,
+    canReadMarque,
+    validateMarqueQuery,
+    marqueController.listMarquesByFiliale
 );
 
 // List marques for the connected user (role-aware)
 router.get('/current-user',
-  canReadMarque,
-  validateMarqueQuery,
-  marqueController.listMarquesForCurrentUser
+    canReadMarque,
+    validateMarqueQuery,
+    marqueController.listMarquesForCurrentUser
 );
 
 // Get marque by ID
 router.get('/:id',
-  validateMarqueId,
-  canReadMarque,
-  marqueController.getMarqueById
+    validateMarqueId,
+    canReadMarque,
+    marqueController.getMarqueById
 );
 
 // List all marques
 router.get('/',
-  canReadMarque,
-  validateMarqueQuery,
-  marqueController.listMarques
+    canReadMarque,
+    validateMarqueQuery,
+    marqueController.listMarques
 );
 
-// Update marque
+// ✅ MODIFIED: Update marque with optional image upload
 router.patch('/:id',
-  validateMarqueId,
-  canUpdateMarque,
-  validateMarqueUpdate,
-  marqueController.updateMarque
+    validateMarqueId,
+    canUpdateMarque,
+    upload.single('image'),
+    validateMarqueUpdate,
+    marqueController.updateMarque
 );
 
 // Activate marque
 router.post('/:id/activate',
-  validateMarqueId,
-  canUpdateMarque,
-  marqueController.activateMarque
+    validateMarqueId,
+    canUpdateMarque,
+    marqueController.activateMarque
 );
 
 // Deactivate marque
 router.post('/:id/deactivate',
-  validateMarqueId,
-  canUpdateMarque,
-  marqueController.deactivateMarque
+    validateMarqueId,
+    canUpdateMarque,
+    marqueController.deactivateMarque
 );
 
 // Error handler for this router
