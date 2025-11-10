@@ -554,8 +554,6 @@ SELECT id = @NewId;
   UR_GET_ALL: 'EXEC dbo.sp_UserRole_GetAll @PageNumber=:pageNumber, @PageSize=:pageSize, @ActiveOnly=:activeOnly',
   },
 
-  // Add to src/sql/snippets.js in the SQL object
-
   ROLE_PERMISSION: {
     RP_ASSIGN: 'EXEC dbo.sp_RolePermission_Assign @idRole=:idRole, @idPermission=:idPermission, @active=:active',
     RP_REMOVE: 'EXEC dbo.sp_RolePermission_Remove @idRole=:idRole, @idPermission=:idPermission',
@@ -705,8 +703,142 @@ SELECT id = @NewId;
   MODELE_DELETE: 'EXEC dbo.sp_Modele_Delete @Id=:id',
  },
 
+ VENTES: {
+  // Create new vente
+  VENTES_CREATE: `
+    DECLARE @NewId INT;
+    EXEC dbo.sp_Ventes_Create
+      @idTypeVente = :idTypeVente,
+      @idUser = :idUser,
+      @idFiliale = :idFiliale,
+      @idSuccursale = :idSuccursale,
+      @idMarque = :idMarque,
+      @idModele = :idModele,
+      @idVersion = :idVersion,
+      @prixVente = :prixVente,
+      @chiffreAffaires = :chiffreAffaires,
+      @marge = :marge,
+      @margePercentage = :margePercentage,
+      @volume = :volume,
+      @venteYear = :venteYear,
+      @venteMonth = :venteMonth,
+      @newId = @NewId OUTPUT;
+    SELECT id = @NewId;
+  `,
 
+  // Get single vente by ID
+  VENTES_GET_BY_ID: `
+    EXEC dbo.sp_Ventes_GetById 
+      @id = :id, 
+      @includeInactive = :includeInactive
+  `,
 
+  // Get all ventes with filters and pagination
+  VENTES_GET_ALL: `
+    EXEC dbo.sp_Ventes_GetAll
+      @idTypeVente = :idTypeVente,
+      @idUser = :idUser,
+      @idFiliale = :idFiliale,
+      @idSuccursale = :idSuccursale,
+      @idMarque = :idMarque,
+      @idModele = :idModele,
+      @idVersion = :idVersion,
+      @yearFrom = :yearFrom,
+      @yearTo = :yearTo,
+      @monthFrom = :monthFrom,
+      @monthTo = :monthTo,
+      @includeInactive = :includeInactive,
+      @pageNumber = :pageNumber,
+      @pageSize = :pageSize
+  `,
 
+  // Update existing vente
+  VENTES_UPDATE: `
+    EXEC dbo.sp_Ventes_Update
+      @id = :id,
+      @idTypeVente = :idTypeVente,
+      @idUser = :idUser,
+      @idFiliale = :idFiliale,
+      @idSuccursale = :idSuccursale,
+      @idMarque = :idMarque,
+      @idModele = :idModele,
+      @idVersion = :idVersion,
+      @prixVente = :prixVente,
+      @chiffreAffaires = :chiffreAffaires,
+      @marge = :marge,
+      @margePercentage = :margePercentage,
+      @volume = :volume,
+      @venteYear = :venteYear,
+      @venteMonth = :venteMonth
+  `,
+
+  // Soft delete - deactivate vente
+  VENTES_DEACTIVATE: `
+    EXEC dbo.sp_Ventes_Deactivate
+      @id = :id,
+      @updatedByUser = :updatedByUser
+  `,
+
+  // Reactivate vente
+  VENTES_ACTIVATE: `
+    EXEC dbo.sp_Ventes_Activate
+      @id = :id,
+      @updatedByUser = :updatedByUser
+  `,
+
+  // Analytics - Get sales summary by period
+  VENTES_GET_SUMMARY_BY_PERIOD: `
+    EXEC dbo.sp_Ventes_GetSummaryByPeriod
+      @yearFrom = :yearFrom,
+      @yearTo = :yearTo,
+      @idFiliale = :idFiliale,
+      @idSuccursale = :idSuccursale,
+      @idMarque = :idMarque
+  `,
+
+  // Analytics - Get performance by vehicle (marque/modele/version)
+  VENTES_GET_PERFORMANCE_BY_VEHICLE: `
+    EXEC dbo.sp_Ventes_GetPerformanceByVehicle
+      @yearFrom = :yearFrom,
+      @yearTo = :yearTo,
+      @level = :level
+  `,
+
+  // Analytics - Get top performers (users/filiales/succursales)
+  VENTES_GET_TOP_PERFORMERS: `
+    EXEC dbo.sp_Ventes_GetTopPerformers
+      @yearFrom = :yearFrom,
+      @yearTo = :yearTo,
+      @performerType = :performerType,
+      @topN = :topN
+  `,
+
+  // Utility - Bulk deactivate by period
+  VENTES_BULK_DEACTIVATE: `
+    EXEC dbo.sp_Ventes_BulkDeactivate
+      @yearFrom = :yearFrom,
+      @yearTo = :yearTo,
+      @updatedByUser = :updatedByUser
+  `,
+
+  // Analytics - Compare periods
+  VENTES_COMPARE_PERIODS: `
+    EXEC dbo.sp_Ventes_ComparePeriods
+      @year1 = :year1,
+      @month1 = :month1,
+      @year2 = :year2,
+      @month2 = :month2,
+      @idMarque = :idMarque,
+      @idFiliale = :idFiliale
+  `,
+
+  // Analytics - Year over year growth
+  VENTES_GET_YEAR_OVER_YEAR_GROWTH: `
+    EXEC dbo.sp_Ventes_GetYearOverYearGrowth
+      @currentYear = :currentYear,
+      @previousYear = :previousYear,
+      @idMarque = :idMarque
+  `,
+ },
 
 };

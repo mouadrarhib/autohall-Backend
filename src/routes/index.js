@@ -18,6 +18,7 @@ import typeObjectifRoutes from './typeobjectif.routes.js';
 import objectifRoutes from './objectif.routes.js';
 import userRoleRoutes from './userRole.routes.js';
 import rolePermissionRoutes  from './rolePermission.routes.js';
+import ventesRoutes from './ventes.routes.js';
 
 
 const router = Router();
@@ -42,6 +43,7 @@ router.use('/type-objectifs', typeObjectifRoutes);
 router.use('/objectifs', objectifRoutes);
 router.use('/user-roles', userRoleRoutes);
 router.use('/role-permissions', rolePermissionRoutes);
+router.use('/ventes', ventesRoutes);
 
 
 
