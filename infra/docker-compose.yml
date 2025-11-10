@@ -12,6 +12,15 @@ services:
     restart: unless-stopped
     networks:
       - autohall-network
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "/opt/mssql-tools18/bin/sqlcmd -C -S . -U mouad -P 'mouad' -Q 'SELECT 1' || exit 1"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
   backend:
     build:
@@ -28,7 +37,8 @@ services:
       - DB_HOST=mssql
       - DB_PORT=1433
     depends_on:
-      - mssql
+      mssql:
+        condition: service_healthy
     networks:
       - autohall-network
 
