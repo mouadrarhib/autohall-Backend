@@ -9,7 +9,7 @@ import * as userRoleService from '../../services/userRole.service.js';
 // ✅ CHANGED: Different roles for different operations
 export const SUCCURSALE_ROLES = {
   // Both admin and intégrateur can READ succursales
-  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs'],
+  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs', 'intégrateur des ventes'],
   // Only admin can CREATE/UPDATE/DELETE succursales
   WRITE_ROLES: ['administrateur fonctionnel']
 };
@@ -56,7 +56,7 @@ const requireSuccursaleRole = (allowedRoles) => {
 };
 
 // ✅ CHANGED: Specific role middleware
-// READ: Both 'administrateur fonctionnel' and 'intégrateur des objectifs' can read
+// READ: 'administrateur fonctionnel', 'intégrateur des objectifs' et 'intégrateur des ventes' can read
 export const canReadSuccursale = requireSuccursaleRole(SUCCURSALE_ROLES.READ_ROLES);
 
 // WRITE: Only 'administrateur fonctionnel' can create/update/delete

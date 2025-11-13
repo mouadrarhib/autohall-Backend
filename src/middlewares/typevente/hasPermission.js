@@ -1,10 +1,10 @@
-// src/middlewares/typevente/hasPermission.js
+﻿// src/middlewares/typevente/hasPermission.js
 
 import * as userRoleService from '../../services/userRole.service.js';
 
 export const TYPE_VENTE_ROLES = {
   FULL_ACCESS: ['administrateur fonctionnel'],
-  READ_ONLY: ['intégrateur des objectifs']
+  READ_ONLY: ['intégrateur des objectifs', 'intégrateur des ventes']
 };
 
 const requireTypeVenteRole = (allowedRoles) => {
@@ -53,3 +53,5 @@ export const canReadTypeVente = requireTypeVenteRole([
 // CREATE/UPDATE - Only administrateur fonctionnel
 export const canCreateTypeVente = requireTypeVenteRole(TYPE_VENTE_ROLES.FULL_ACCESS);
 export const canUpdateTypeVente = requireTypeVenteRole(TYPE_VENTE_ROLES.FULL_ACCESS);
+
+

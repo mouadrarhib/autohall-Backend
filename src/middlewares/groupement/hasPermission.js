@@ -4,7 +4,7 @@ import * as userRoleService from '../../services/userRole.service.js';
 
 export const GROUPEMENT_ROLES = {
   FULL_ACCESS: ['administrateur fonctionnel'],
-  READ_ONLY: ['intégrateur des objectifs']
+  READ_ONLY: ['intégrateur des objectifs', 'intégrateur des ventes']
 };
 
 const requireGroupementRole = (allowedRoles) => {

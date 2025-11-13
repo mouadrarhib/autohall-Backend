@@ -9,7 +9,7 @@ import * as userRoleService from '../../services/userRole.service.js';
 // ✅ CHANGED: Different roles for different operations
 export const FILIALE_ROLES = {
   // Both admin and intégrateur can READ filiales
-  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs'],
+  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs', 'intégrateur des ventes'],
   // Only admin can CREATE/UPDATE/DELETE filiales
   WRITE_ROLES: ['administrateur fonctionnel']
 };
@@ -71,7 +71,7 @@ const requireFilialeRole = (allowedRoles) => {
 };
 
 // ✅ CHANGED: Specific role middleware for filiale management
-// READ: Both 'administrateur fonctionnel' and 'intégrateur des objectifs' can read
+// READ: 'administrateur fonctionnel', 'intégrateur des objectifs' et 'intégrateur des ventes' can read
 export const canReadFiliale = requireFilialeRole(FILIALE_ROLES.READ_ROLES);
 
 // WRITE: Only 'administrateur fonctionnel' can create/update/delete
