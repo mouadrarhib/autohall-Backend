@@ -9,7 +9,7 @@ import * as userRoleService from '../../services/userRole.service.js';
 // ✅ CHANGED: Different roles for different operations
 export const AUTH_ROLES = {
   // Both admin and intégrateur can READ users
-  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs'],
+  READ_ROLES: ['administrateur fonctionnel', 'intégrateur des objectifs', 'intégrateur des ventes'],
   // Only admin can CREATE/UPDATE/DELETE users
   WRITE_ROLES: ['administrateur fonctionnel']
 };
@@ -71,7 +71,7 @@ const requireAuthRole = (allowedRoles) => {
 };
 
 // ✅ CHANGED: Specific role middleware for auth/user management
-// READ: Both 'administrateur fonctionnel' and 'intégrateur des objectifs' can read users
+// READ: 'administrateur fonctionnel', 'intégrateur des objectifs' et 'intégrateur des ventes' can read users
 export const canReadAuth = requireAuthRole(AUTH_ROLES.READ_ROLES);
 
 // WRITE: Only 'administrateur fonctionnel' can manage users
