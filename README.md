@@ -2,6 +2,17 @@
 
 Node.js/Express backend for Autohall with MSSQL (Sequelize) and JWT auth. Includes CRUD modules (users, roles, ventes/objectifs, etc.), Swagger documentation, file uploads via Cloudinary, and an AI-assisted objective forecasting endpoint backed by a Python model.
 
+## Recent updates (Feb 2026)
+- CI/CD pipeline upgraded in GitHub Actions: verification on PR/push and Docker image publishing to GHCR on `main`.
+- Added backend smoke tests for critical paths:
+  - `GET /healthz`
+  - `POST /api/auth/login` failure path (invalid credentials)
+  - `POST /api/auth/login` success path (token cookie set)
+- Server bootstrap refactored to expose `createApp()` (test-friendly) and `startServer()`.
+- Runtime config hardened:
+  - `PORT` and `CORS_ORIGIN` now env-driven with safe local defaults.
+  - `.env` is no longer tracked; use `.env.example`.
+
 ## Stack
 - Node.js 18+, Express, Sequelize (MSSQL via `tedious`)
 - Auth: JWT (`Authorization: Bearer <token>`) with `isAuth` middleware
@@ -15,8 +26,9 @@ Node.js/Express backend for Autohall with MSSQL (Sequelize) and JWT auth. Includ
 - Python 3.x available on PATH (or set `PYTHON_BIN`); `statsmodels` recommended
 
 ## Environment
-Create a `.env` with (at minimum):
+Create a local `.env` from `.env.example` and set (at minimum):
 - `PORT` (default 4000)
+- `CORS_ORIGIN` (default `http://localhost:5173`, supports comma-separated list)
 - `DB_NAME`, `DB_USER`, `DB_PASSWORD` (`DB_PASS`), `DB_HOST` (default localhost), `DB_PORT` (default 1433)
 - `JWT_SECRET`, optional `JWT_EXPIRES` (default 1h)
 - Cloudinary: `CLOUD_NAME`, `CLOUDINARY_KEY`, `CLOUDINARY_SECRET`
@@ -112,7 +124,8 @@ scripts/
 
 ## Running tests
 ```bash
-npm test   # runs database test (adjust DB config in .env)
+npm test        # run all backend tests
+npm run test:smoke
 ```
 
 ## Auth and security
