@@ -72,8 +72,8 @@ export const validateVersionCreate = createValidator({
   idModele: [rules.required, rules.positiveInt],
   volume: [rules.required, rules.positiveInt],
   salePrice: [rules.required, rules.decimal],
-  tmDirect: [rules.required, rules.decimal, rules.maxDecimal(1)],
-  margeInterGroupe: [rules.required, rules.decimal, rules.maxDecimal(1)]
+  tmDirect: [rules.required, rules.decimal, rules.maxDecimal(30)],
+  tmInterGroupe: [rules.required, rules.decimal, rules.maxDecimal(30)]
 });
 
 export const validateVersionUpdate = createValidator({
@@ -81,8 +81,8 @@ export const validateVersionUpdate = createValidator({
   idModele: [rules.positiveInt],
   volume: [rules.positiveInt],
   salePrice: [rules.decimal],
-  tmDirect: [rules.decimal, rules.maxDecimal(1)],
-  margeInterGroupe: [rules.decimal, rules.maxDecimal(1)]
+  tmDirect: [rules.decimal, rules.maxDecimal(30)],
+  tmInterGroupe: [rules.decimal, rules.maxDecimal(30)]
 });
 
 export const validateVersionId = (req, res, next) => {
