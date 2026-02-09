@@ -1,4 +1,4 @@
-name: Backend CI
+name: Backend CI/CD
 
 on:
   pull_request:
@@ -8,13 +8,19 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: backend-ci-${{ github.ref }}
+  group: backend-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/autohall-backend
 
 jobs:
   verify:
     name: Verify Backend
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -23,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -39,4 +45,45 @@ jobs:
           fi
 
       - name: Build Docker image
-        run: docker build --tag autohall-backend:ci .
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: autohall-backend:ci
+
+  publish-image:
+    name: Publish Backend Image
+    runs-on: ubuntu-latest
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
