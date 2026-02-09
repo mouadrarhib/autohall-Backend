@@ -1,0 +1,42 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests (if present)
+        shell: bash
+        run: |
+          if [ -f tests/database.test.js ]; then
+            npm test
+          else
+            echo "::warning file=package.json,line=10::Skipping npm test because tests/database.test.js is missing."
+          fi
+
+      - name: Build Docker image
+        run: docker build --tag autohall-backend:ci .
