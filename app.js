@@ -12,13 +12,31 @@ import { initDb } from './src/models/index.js';
 import { errorHandler } from './src/helpers/errors.js';
 import { auditAll } from './src/middlewares/auditAll.js';
 
+const DEFAULT_CORS_ORIGIN = 'http://localhost:5173';
+
+const parseCorsOrigins = () => {
+  const rawOrigins = process.env.CORS_ORIGIN || DEFAULT_CORS_ORIGIN;
+  return rawOrigins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
 export const createApp = () => {
   const app = express();
+  const allowedOrigins = parseCorsOrigins();
 
   app.use(helmet());
   app.use(
     cors({
-      origin: 'http://localhost:5173',
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error('CORS origin not allowed'));
+      },
       credentials: true,
     })
   );
