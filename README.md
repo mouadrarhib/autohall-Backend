@@ -4,6 +4,10 @@ Node.js/Express backend for Autohall with MSSQL (Sequelize) and JWT auth. Includ
 
 ## Recent updates (Feb 2026)
 - CI/CD pipeline upgraded in GitHub Actions: verification on PR/push and Docker image publishing to GHCR on `main`.
+- Infra stack upgraded to `autohall-infra` Docker Compose project:
+  - Includes `mssql`, `backend`, and `frontend` services in one command.
+  - Frontend is built from `../../autohall-frontend` and connected to backend on `http://localhost:3001` by default.
+  - Container names are now prefixed with `autohall-infra-*` for clearer local ops.
 - Added backend smoke tests for critical paths:
   - `GET /healthz`
   - `POST /api/auth/login` failure path (invalid credentials)
@@ -44,6 +48,24 @@ npm start      # node app.js
 - Health check: `/healthz`
 - API base: `/api`
 - Swagger UI: `/docs` (JSON at `/docs.json`)
+
+## Infra Docker Compose (Autohall)
+From `autohall-backend/infra`:
+
+```bash
+docker compose up -d --build
+```
+
+Default published ports:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:3001`
+- Swagger: `http://localhost:3001/docs`
+- MSSQL: `localhost:1433`
+
+Important compose environment variables:
+- `ACCEPT_EULA` (required by MSSQL image)
+- `SA_PASSWORD` (required by MSSQL image)
+- Optional overrides: `BACKEND_PORT_HOST`, `FRONTEND_PORT_HOST`, `FRONTEND_API_BASE_URL`, `DB_PORT_HOST`
 
 ## Prediction endpoint (new)
 - **Route**: `POST /api/predictions/objectifs` (JWT required)
