@@ -1,7 +1,9 @@
+name: autohall-infra
+
 services:
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: ${COMPOSE_PROJECT_NAME:-autohall}-mssql
+    container_name: ${COMPOSE_PROJECT_NAME:-autohall-infra}-mssql
     ports:
       - "${DB_PORT_HOST:-1433}:1433"
     environment:
@@ -26,10 +28,10 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    container_name: autohall-backend
+    container_name: ${COMPOSE_PROJECT_NAME:-autohall-infra}-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT_HOST:-3001}:3000"
     env_file:
       - ../.env
     environment:
@@ -39,6 +41,22 @@ services:
     depends_on:
       mssql:
         condition: service_healthy
+    networks:
+      - autohall-network
+
+  frontend:
+    build:
+      context: ../../autohall-frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${FRONTEND_API_BASE_URL:-http://localhost:3001}
+    container_name: ${COMPOSE_PROJECT_NAME:-autohall-infra}-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT_HOST:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_started
     networks:
       - autohall-network
 
